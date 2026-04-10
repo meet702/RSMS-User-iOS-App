@@ -44,4 +44,10 @@ class CartManager {
     func isInCart(product: Product) -> Bool {
         items.contains { $0.product.id == product.id }
     }
+    
+    func clearCart() {
+        withAnimation {
+            items.removeAll()
+        }
+    }
 }

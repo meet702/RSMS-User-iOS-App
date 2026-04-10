@@ -396,7 +396,7 @@ struct ProductDetailView: View {
             .buttonStyle(PressButtonStyle())
             
             // Buy Now
-            Button(action: {}) {
+            Button(action: { buyNow() }) {
                 Text("BUY NOW")
                     .font(.subheadline)
                     .fontWeight(.bold)
@@ -416,6 +416,9 @@ struct ProductDetailView: View {
                 .shadow(color: .black.opacity(0.5), radius: 10, y: -5)
                 .ignoresSafeArea(edges: .bottom)
         )
+        .fullScreenCover(isPresented: $showCheckout) {
+            CheckoutView()
+        }
     }
     
     // MARK: - Toast
@@ -444,6 +447,8 @@ struct ProductDetailView: View {
     
     // MARK: - Actions
     
+    @State private var showCheckout = false
+    
     private func addToCart() {
         cartManager.addToCart(product: product, variant: selectedVariant)
         withAnimation(.spring(response: 0.4)) {
@@ -453,6 +458,12 @@ struct ProductDetailView: View {
             try? await Task.sleep(for: .seconds(2))
             withAnimation { showAddedToCart = false }
         }
+    }
+    
+    private func buyNow() {
+        // Add to cart if not already there, then show checkout
+        cartManager.addToCart(product: product, variant: selectedVariant)
+        showCheckout = true
     }
 }
 
