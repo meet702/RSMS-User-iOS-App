@@ -11,6 +11,8 @@ import SwiftUI
 struct User_Side_AppApp: App {
     @State private var cartManager = CartManager()
     @State private var wishlistManager = WishlistManager()
+    @State private var ordersManager = OrdersManager()
+    @State private var profileManager = ProfileManager()
     @State private var userManager = UserManager()
     
     var body: some Scene {
@@ -18,6 +20,8 @@ struct User_Side_AppApp: App {
             ContentView()
                 .environment(cartManager)
                 .environment(wishlistManager)
+                .environment(ordersManager)
+                .environment(profileManager)
                 .environment(userManager)
         }
     }

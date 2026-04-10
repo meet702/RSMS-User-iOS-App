@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct OrdersView: View {
-    @State private var viewModel = OrdersViewModel()
+    @Environment(OrdersManager.self) private var ordersManager
     
     var body: some View {
         NavigationStack {
@@ -21,11 +21,11 @@ struct OrdersView: View {
                 
                 // List of Orders
                 ScrollView(.vertical, showsIndicators: false) {
-                    if viewModel.currentOrders.isEmpty {
+                    if ordersManager.currentOrders.isEmpty {
                         emptyState
                     } else {
                         LazyVStack(spacing: 16) {
-                            ForEach(viewModel.currentOrders) { order in
+                            ForEach(ordersManager.currentOrders) { order in
                                 NavigationLink(value: order) {
                                     OrderCardView(order: order)
                                 }
@@ -51,7 +51,7 @@ struct OrdersView: View {
             }
             .navigationDestination(for: Order.self) { order in
                 OrderTrackingView(order: order) {
-                    viewModel.cancelOrder(order.id)
+                    ordersManager.cancelOrder(order.id)
                 }
             }
         }
@@ -61,21 +61,21 @@ struct OrdersView: View {
     
     private var segmentedPicker: some View {
         HStack(spacing: 0) {
-            ForEach(OrdersViewModel.OrderTab.allCases, id: \.self) { tab in
+            ForEach(OrdersManager.OrderTab.allCases, id: \.self) { tab in
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        viewModel.selectedTab = tab
+                        ordersManager.selectedTab = tab
                     }
                 }) {
                     Text(tab.rawValue)
                         .font(.subheadline)
-                        .fontWeight(viewModel.selectedTab == tab ? .bold : .medium)
-                        .foregroundStyle(viewModel.selectedTab == tab ? AppColors.pureWhite : AppColors.grayLight)
+                        .fontWeight(ordersManager.selectedTab == tab ? .bold : .medium)
+                        .foregroundStyle(ordersManager.selectedTab == tab ? AppColors.pureWhite : AppColors.grayLight)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(
                             ZStack {
-                                if viewModel.selectedTab == tab {
+                                if ordersManager.selectedTab == tab {
                                     Capsule()
                                         .fill(AppColors.surfaceDark)
                                         .overlay(Capsule().stroke(AppColors.gold.opacity(0.3), lineWidth: 1))
@@ -119,12 +119,12 @@ struct OrdersView: View {
             }
             
             VStack(spacing: 8) {
-                Text("No \(viewModel.selectedTab.rawValue)")
+                Text("No \(ordersManager.selectedTab.rawValue)")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
                 
-                Text(viewModel.selectedTab == .active
+                Text(ordersManager.selectedTab == .active
                      ? "You don't have any active orders right now.\nStart shopping to place an order!"
                      : "You haven't made any purchases yet.")
                     .font(.subheadline)
@@ -133,7 +133,7 @@ struct OrdersView: View {
                     .lineSpacing(4)
             }
             
-            if viewModel.selectedTab == .active {
+            if ordersManager.selectedTab == .active {
                 // Return to shopping (Navigation routing would go back to home or shop tab)
                 Button(action: {
                     // In a fully integrated app layout, you could inject selectedTab via environment
@@ -160,4 +160,5 @@ struct OrdersView: View {
 #Preview {
     OrdersView()
         .preferredColorScheme(.dark)
+        .environment(OrdersManager())
 }

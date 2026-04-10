@@ -229,25 +229,6 @@ enum MockData {
     // MARK: - Mock Orders
     
     static let orders: [Order] = [
-        // Active Order
-        Order(
-            orderNumber: "ORD-9482-771",
-            date: Date().addingTimeInterval(-86400 * 2), // 2 days ago
-            items: [
-                OrderItem(product: products[0], variant: "40mm", quantity: 1, priceAtPurchase: products[0].price)
-            ],
-            subtotal: products[0].price,
-            taxes: products[0].price * 0.18,
-            deliveryFee: 0,
-            status: .processing,
-            trackingSteps: [
-                TrackingStep(status: .placed, date: Date().addingTimeInterval(-86400 * 2), title: "Order Placed", description: "Your order has been received.", isCompleted: true),
-                TrackingStep(status: .processing, date: Date().addingTimeInterval(-86400 * 1.5), title: "Processing", description: "We are preparing your item for dispatch.", isCompleted: true),
-                TrackingStep(status: .dispatched, date: nil, title: "Dispatched", description: "Your item is on the way.", isCompleted: false),
-                TrackingStep(status: .delivered, date: nil, title: "Delivered", description: "Estimated delivery.", isCompleted: false)
-            ],
-            estimatedDelivery: Date().addingTimeInterval(86400 * 3)
-        ),
         // Delivered Order
         Order(
             orderNumber: "ORD-6122-309",
