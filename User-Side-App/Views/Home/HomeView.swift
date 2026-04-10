@@ -9,56 +9,62 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var viewModel = HomeViewModel()
+    @Environment(NavigationManager.self) private var navManager
     
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 28) {
-                
-                // MARK: - Header
-                headerSection
-                
-                // MARK: - Search Bar
-                HomeSearchBar(searchText: $viewModel.searchText)
-                
-                // MARK: - Banner Carousel
-                BannerCarousel(banners: viewModel.banners)
-                
-                // MARK: - Categories
-                CategorySection(categories: viewModel.categories)
-                
-                // Gold divider
-                goldDivider
-                
-                // MARK: - New Arrivals
-                FeaturedSection(
-                    title: "New Arrivals",
-                    products: viewModel.newArrivals
-                )
-                
-                // MARK: - Featured Collection
-                FeaturedSection(
-                    title: "Featured Collection",
-                    products: viewModel.featuredProducts
-                )
-                
-                // Gold divider
-                goldDivider
-                
-                // MARK: - Recommendations
-                RecommendationSection(products: viewModel.recommendations)
-                
-                // MARK: - Loyalty Banner
-                loyaltyBanner
-                
-                // MARK: - Appointment Teaser
-                appointmentTeaser
-                
-                // Bottom spacing for tab bar
-                Color.clear.frame(height: 20)
+        NavigationStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 28) {
+                    
+                    // MARK: - Header
+                    headerSection
+                    
+                    // MARK: - Search Bar
+                    HomeSearchBar(searchText: $viewModel.searchText)
+                    
+                    // MARK: - Banner Carousel
+                    BannerCarousel(banners: viewModel.banners)
+                    
+                    // MARK: - Categories
+                    CategorySection(categories: viewModel.categories)
+                    
+                    // Gold divider
+                    goldDivider
+                    
+                    // MARK: - New Arrivals
+                    FeaturedSection(
+                        title: "New Arrivals",
+                        products: viewModel.newArrivals
+                    )
+                    
+                    // MARK: - Featured Collection
+                    FeaturedSection(
+                        title: "Featured Collection",
+                        products: viewModel.featuredProducts
+                    )
+                    
+                    // Gold divider
+                    goldDivider
+                    
+                    // MARK: - Recommendations
+                    RecommendationSection(products: viewModel.recommendations)
+                    
+                    // MARK: - Loyalty Banner
+                    loyaltyBanner
+                    
+                    // MARK: - Appointment Teaser
+                    appointmentTeaser
+                    
+                    // Bottom spacing for tab bar
+                    Color.clear.frame(height: 20)
+                }
+                .padding(.top, 8)
             }
-            .padding(.top, 8)
+            .background(AppColors.background)
+            .navigationDestination(for: Product.self) { product in
+                ProductDetailView(product: product)
+            }
         }
-        .background(AppColors.background)
     }
     
     // MARK: - Header
@@ -87,7 +93,7 @@ struct HomeView: View {
             Spacer()
             
             // Notification bell
-            Button(action: {}) {
+            Button(action: { navManager.showNotifications = true }) {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
                         .font(.system(size: 20))
@@ -181,7 +187,9 @@ struct HomeView: View {
                         .foregroundStyle(AppColors.pureWhite)
                         .lineSpacing(4)
                     
-                    GoldButton(title: "JOIN NOW", isCompact: true)
+                    GoldButton(title: "JOIN NOW", isCompact: true) {
+                        navManager.navigateToProfile()
+                    }
                 }
                 
                 Spacer()
@@ -199,50 +207,54 @@ struct HomeView: View {
     // MARK: - Appointment Teaser
     
     private var appointmentTeaser: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 18)
-                .fill(AppColors.surfaceDark)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
-                )
-            
-            HStack(spacing: 16) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(AppColors.surfaceGold)
-                        .frame(width: 56, height: 56)
+        Button(action: { navManager.showAppointments = true }) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(AppColors.surfaceDark)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
+                    )
+                
+                HStack(spacing: 16) {
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(AppColors.surfaceGold)
+                            .frame(width: 56, height: 56)
+                        
+                        Circle()
+                            .stroke(AppColors.gold.opacity(0.4), lineWidth: 1)
+                            .frame(width: 56, height: 56)
+                        
+                        Image(systemName: "calendar.badge.clock")
+                            .font(.system(size: 22))
+                            .foregroundStyle(AppColors.gold)
+                    }
                     
-                    Circle()
-                        .stroke(AppColors.gold.opacity(0.4), lineWidth: 1)
-                        .frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Book a Store Visit")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(AppColors.pureWhite)
+                        
+                        Text("Experience luxury in person. Book a private appointment.")
+                            .font(.caption)
+                            .foregroundStyle(AppColors.grayLight)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    }
                     
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.system(size: 22))
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
                         .foregroundStyle(AppColors.gold)
                 }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Book a Store Visit")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(AppColors.pureWhite)
-                    
-                    Text("Experience luxury in person. Book a private appointment.")
-                        .font(.caption)
-                        .foregroundStyle(AppColors.grayLight)
-                        .lineLimit(2)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.gold)
+                .padding(16)
             }
-            .padding(16)
         }
+        .buttonStyle(.plain)
         .frame(height: 88)
         .padding(.horizontal, 20)
     }

@@ -33,9 +33,11 @@ struct CategoryCard: View {
                         )
                         .frame(width: 64, height: 64)
                     
-                    Image(systemName: category.icon)
-                        .font(.system(size: 24))
-                        .foregroundStyle(AppColors.gold)
+                    Image(category.icon)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 64, height: 64)
+                        .clipShape(Circle())
                 }
                 
                 // Category name

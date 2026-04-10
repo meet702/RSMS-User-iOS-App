@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CategorySection: View {
     let categories: [Category]
+    @Environment(NavigationManager.self) private var navManager
     
     var body: some View {
         VStack(spacing: 16) {
@@ -17,7 +18,9 @@ struct CategorySection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
                     ForEach(categories) { category in
-                        CategoryCard(category: category)
+                        CategoryCard(category: category) {
+                            navManager.navigateToShop(withCategory: category.name)
+                        }
                     }
                 }
                 .padding(.horizontal, 20)

@@ -130,27 +130,19 @@ struct ProductDetailView: View {
             TabView(selection: $currentImageIndex) {
                 ForEach(0..<3, id: \.self) { index in
                     ZStack {
+                        Image(product.imageName)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 400)
+                            .clipped()
+                        
+                        // Subtle gradient overlay for readability on light images
                         LinearGradient(
-                            colors: [imageGradients[index].0, imageGradients[index].1],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            colors: [.clear, .black.opacity(0.3)],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
-                        
-                        // Decorative glow
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [AppColors.gold.opacity(0.08), .clear],
-                                    center: .center,
-                                    startRadius: 0,
-                                    endRadius: 150
-                                )
-                            )
-                            .frame(width: 300, height: 300)
-                        
-                        Image(systemName: product.imageName)
-                            .font(.system(size: 80, weight: .ultraLight))
-                            .foregroundStyle(AppColors.gold.opacity(0.45))
                     }
                     .tag(index)
                 }

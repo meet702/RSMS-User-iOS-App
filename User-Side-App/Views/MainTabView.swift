@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab: AppTab = .home
+    @Environment(NavigationManager.self) private var navManager
     @Environment(CartManager.self) private var cartManager
     
     enum AppTab: Hashable {
@@ -16,7 +16,7 @@ struct MainTabView: View {
     }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Bindable(navManager).selectedTab) {
             Tab("Home", systemImage: "house.fill", value: AppTab.home) {
                 HomeView()
             }
@@ -39,6 +39,12 @@ struct MainTabView: View {
             }
         }
         .tint(AppColors.gold)
+        .sheet(isPresented: Bindable(navManager).showNotifications) {
+            NotificationSheet()
+        }
+        .sheet(isPresented: Bindable(navManager).showAppointments) {
+            AppointmentSheet()
+        }
     }
 }
 

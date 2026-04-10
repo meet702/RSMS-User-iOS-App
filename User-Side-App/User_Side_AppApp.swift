@@ -14,6 +14,7 @@ struct User_Side_AppApp: App {
     @State private var ordersManager = OrdersManager()
     @State private var profileManager = ProfileManager()
     @State private var userManager = UserManager()
+    @State private var navManager = NavigationManager()
     
     var body: some Scene {
         WindowGroup {
@@ -23,6 +24,7 @@ struct User_Side_AppApp: App {
                 .environment(ordersManager)
                 .environment(profileManager)
                 .environment(userManager)
+                .environment(navManager)
         }
     }
 }
