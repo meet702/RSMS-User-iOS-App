@@ -1,0 +1,87 @@
+//
+//  Order.swift
+//  User-Side-App
+//
+//  Order data models for LUXE
+//
+
+import Foundation
+
+enum OrderStatus: String, CaseIterable, Codable, Sendable {
+    case placed = "Order Placed"
+    case processing = "Processing"
+    case dispatched = "Dispatched"
+    case outForDelivery = "Out for Delivery"
+    case delivered = "Delivered"
+    case cancelled = "Cancelled"
+    
+    var isActive: Bool {
+        return self != .delivered && self != .cancelled
+    }
+}
+
+struct TrackingStep: Identifiable, Hashable, Sendable {
+    let id = UUID()
+    let status: OrderStatus
+    let date: Date?
+    let title: String
+    let description: String
+    let isCompleted: Bool
+}
+
+struct OrderItem: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let product: Product
+    let variant: String?
+    let quantity: Int
+    let priceAtPurchase: Double
+    
+    init(id: UUID = UUID(), product: Product, variant: String? = nil, quantity: Int, priceAtPurchase: Double) {
+        self.id = id
+        self.product = product
+        self.variant = variant
+        self.quantity = quantity
+        self.priceAtPurchase = priceAtPurchase
+    }
+}
+
+struct Order: Identifiable, Hashable, Sendable {
+    let id: UUID
+    let orderNumber: String
+    let date: Date
+    let items: [OrderItem]
+    let subtotal: Double
+    let taxes: Double
+    let deliveryFee: Double
+    var finalTotal: Double {
+        subtotal + taxes + deliveryFee
+    }
+    
+    var status: OrderStatus
+    var trackingSteps: [TrackingStep]
+    var estimatedDelivery: Date?
+    
+    init(
+        id: UUID = UUID(),
+        orderNumber: String,
+        date: Date,
+        items: [OrderItem],
+        subtotal: Double,
+        taxes: Double,
+        deliveryFee: Double = 0,
+        status: OrderStatus,
+        trackingSteps: [TrackingStep] = [],
+        estimatedDelivery: Date? = nil
+    ) {
+        self.id = id
+        self.orderNumber = orderNumber
+        self.date = date
+        self.items = items
+        self.subtotal = subtotal
+        self.taxes = taxes
+        self.deliveryFee = deliveryFee
+        self.status = status
+        self.trackingSteps = trackingSteps
+        self.estimatedDelivery = estimatedDelivery
+    }
+}

@@ -225,5 +225,65 @@ enum MockData {
             return ["Standard"]
         }
     }
+    
+    // MARK: - Mock Orders
+    
+    static let orders: [Order] = [
+        // Active Order
+        Order(
+            orderNumber: "ORD-9482-771",
+            date: Date().addingTimeInterval(-86400 * 2), // 2 days ago
+            items: [
+                OrderItem(product: products[0], variant: "40mm", quantity: 1, priceAtPurchase: products[0].price)
+            ],
+            subtotal: products[0].price,
+            taxes: products[0].price * 0.18,
+            deliveryFee: 0,
+            status: .processing,
+            trackingSteps: [
+                TrackingStep(status: .placed, date: Date().addingTimeInterval(-86400 * 2), title: "Order Placed", description: "Your order has been received.", isCompleted: true),
+                TrackingStep(status: .processing, date: Date().addingTimeInterval(-86400 * 1.5), title: "Processing", description: "We are preparing your item for dispatch.", isCompleted: true),
+                TrackingStep(status: .dispatched, date: nil, title: "Dispatched", description: "Your item is on the way.", isCompleted: false),
+                TrackingStep(status: .delivered, date: nil, title: "Delivered", description: "Estimated delivery.", isCompleted: false)
+            ],
+            estimatedDelivery: Date().addingTimeInterval(86400 * 3)
+        ),
+        // Delivered Order
+        Order(
+            orderNumber: "ORD-6122-309",
+            date: Date().addingTimeInterval(-86400 * 15), // 15 days ago
+            items: [
+                OrderItem(product: products[1], quantity: 1, priceAtPurchase: products[1].price),
+                OrderItem(product: products[2], variant: "Medium", quantity: 1, priceAtPurchase: products[2].price)
+            ],
+            subtotal: products[1].price + products[2].price,
+            taxes: (products[1].price + products[2].price) * 0.18,
+            deliveryFee: 500,
+            status: .delivered,
+            trackingSteps: [
+                TrackingStep(status: .placed, date: Date().addingTimeInterval(-86400 * 15), title: "Order Placed", description: "Your order has been received.", isCompleted: true),
+                TrackingStep(status: .processing, date: Date().addingTimeInterval(-86400 * 14.5), title: "Processing", description: "Item prepared for dispatch.", isCompleted: true),
+                TrackingStep(status: .dispatched, date: Date().addingTimeInterval(-86400 * 14), title: "Dispatched", description: "Item handled to courier partner.", isCompleted: true),
+                TrackingStep(status: .delivered, date: Date().addingTimeInterval(-86400 * 12), title: "Delivered", description: "Delivered securely to your address.", isCompleted: true)
+            ],
+            estimatedDelivery: Date().addingTimeInterval(-86400 * 12)
+        ),
+        // Cancelled Order
+        Order(
+            orderNumber: "ORD-1093-884",
+            date: Date().addingTimeInterval(-86400 * 30),
+            items: [
+                OrderItem(product: products[6], variant: "One Size", quantity: 1, priceAtPurchase: products[6].price)
+            ],
+            subtotal: products[6].price,
+            taxes: products[6].price * 0.18,
+            deliveryFee: 0,
+            status: .cancelled,
+            trackingSteps: [
+                TrackingStep(status: .placed, date: Date().addingTimeInterval(-86400 * 30), title: "Order Placed", description: "Your order has been received.", isCompleted: true),
+                TrackingStep(status: .cancelled, date: Date().addingTimeInterval(-86400 * 29.5), title: "Order Cancelled", description: "You cancelled this order.", isCompleted: true)
+            ]
+        )
+    ]
 }
 
