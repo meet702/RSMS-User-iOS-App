@@ -19,6 +19,10 @@ class CartManager {
         items.reduce(0) { $0 + $1.totalPrice }
     }
     
+    var taxes: Double {
+        subtotal * 0.18
+    }
+    
     func addToCart(product: Product, variant: String? = nil) {
         if let index = items.firstIndex(where: { $0.product.id == product.id && $0.variant == variant }) {
             items[index].quantity += 1
@@ -27,12 +31,12 @@ class CartManager {
         }
     }
     
-    func removeFromCart(item: CartItem) {
-        items.removeAll { $0.id == item.id }
+    func removeFromCart(id: UUID) {
+        items.removeAll { $0.id == id }
     }
     
-    func updateQuantity(for item: CartItem, quantity: Int) {
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
+    func updateQuantity(id: UUID, quantity: Int) {
+        if let index = items.firstIndex(where: { $0.id == id }) {
             if quantity <= 0 {
                 items.remove(at: index)
             } else {

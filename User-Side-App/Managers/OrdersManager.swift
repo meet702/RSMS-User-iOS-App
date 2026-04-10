@@ -1,14 +1,14 @@
 //
-//  OrdersViewModel.swift
+//  OrdersManager.swift
 //  User-Side-App
 //
-//  ViewModel managing active and past orders for LUXE
+//  Global Environment manager handling active and past orders for LUXE
 //
 
 import SwiftUI
 
 @Observable
-class OrdersViewModel {
+class OrdersManager {
     var orders: [Order]
     var selectedTab: OrderTab = .active
     
@@ -70,5 +70,10 @@ class OrdersViewModel {
                 selectedTab = .past
             }
         }
+    }
+    
+    func addOrder(_ newOrder: Order) {
+        orders.insert(newOrder, at: 0)
+        selectedTab = .active
     }
 }
