@@ -11,12 +11,14 @@ import SwiftUI
 struct User_Side_AppApp: App {
     @State private var cartManager = CartManager()
     @State private var wishlistManager = WishlistManager()
+    @State private var userManager = UserManager()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(cartManager)
                 .environment(wishlistManager)
+                .environment(userManager)
         }
     }
 }
