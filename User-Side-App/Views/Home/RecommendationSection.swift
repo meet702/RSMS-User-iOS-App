@@ -2,29 +2,33 @@
 //  RecommendationSection.swift
 //  User-Side-App
 //
-//  AI-curated recommendations grid for LUXE Home tab
+//  AI-curated recommendations for LUXE Home tab
+//  Shows 2 visible cards with horizontal scroll + "See All" sheet
 //
 
 import SwiftUI
 
 struct RecommendationSection: View {
     let products: [Product]
-    
-    private let columns = [
-        GridItem(.flexible(), spacing: 14),
-        GridItem(.flexible(), spacing: 14),
-    ]
+    @State private var showAll = false
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Curated for You ✨")
-            
-            LazyVGrid(columns: columns, spacing: 14) {
-                ForEach(products) { product in
-                    ProductCardGrid(product: product)
-                }
+            SectionHeader(title: "Curated for You ✨") {
+                showAll = true
             }
-            .padding(.horizontal, 20)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(products.prefix(4)) { product in
+                        ProductCardHorizontal(product: product)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+        .sheet(isPresented: $showAll) {
+            SeeAllProductsView(title: "Curated for You", products: products)
         }
     }
 }
@@ -36,4 +40,5 @@ struct RecommendationSection: View {
             RecommendationSection(products: MockData.products)
         }
     }
+    .environment(WishlistManager())
 }

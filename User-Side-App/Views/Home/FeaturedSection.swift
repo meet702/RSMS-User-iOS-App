@@ -3,6 +3,7 @@
 //  User-Side-App
 //
 //  Featured / New Arrivals horizontal scroll for LUXE Home tab
+//  Shows 2 visible cards with horizontal scroll + "See All" sheet
 //
 
 import SwiftUI
@@ -10,19 +11,25 @@ import SwiftUI
 struct FeaturedSection: View {
     let title: String
     let products: [Product]
+    @State private var showAll = false
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: title)
+            SectionHeader(title: title) {
+                showAll = true
+            }
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
-                    ForEach(products) { product in
+                    ForEach(products.prefix(4)) { product in
                         ProductCardHorizontal(product: product)
                     }
                 }
                 .padding(.horizontal, 20)
             }
+        }
+        .sheet(isPresented: $showAll) {
+            SeeAllProductsView(title: title, products: products)
         }
     }
 }
@@ -35,4 +42,5 @@ struct FeaturedSection: View {
             products: MockData.newArrivals
         )
     }
+    .environment(WishlistManager())
 }
