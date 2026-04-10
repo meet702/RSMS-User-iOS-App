@@ -17,19 +17,12 @@ struct ProductCardHorizontal: View {
         VStack(alignment: .leading, spacing: 0) {
             // Product image area
             ZStack(alignment: .topTrailing) {
-                // Gradient background with icon
-                ZStack {
-                    LinearGradient(
-                        colors: [AppColors.surfaceGold.opacity(0.8), AppColors.surfaceDark],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    
-                    Image(systemName: product.imageName)
-                        .font(.system(size: 44, weight: .light))
-                        .foregroundStyle(AppColors.gold.opacity(0.5))
-                }
-                .frame(height: 160)
+                // Product image
+                Image(product.imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 160)
+                    .clipped()
                 
                 // Wishlist heart
                 Button(action: { wishlistManager.toggle(product) }) {
@@ -112,18 +105,12 @@ struct ProductCardGrid: View {
         VStack(alignment: .leading, spacing: 0) {
             // Product image area
             ZStack(alignment: .topTrailing) {
-                ZStack {
-                    LinearGradient(
-                        colors: [AppColors.surfaceGold.opacity(0.6), AppColors.surfaceDark],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    
-                    Image(systemName: product.imageName)
-                        .font(.system(size: 36, weight: .light))
-                        .foregroundStyle(AppColors.gold.opacity(0.4))
-                }
-                .frame(height: 140)
+                // Product image
+                Image(product.imageName)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 140)
+                    .clipped()
                 
                 // Wishlist
                 Button(action: { wishlistManager.toggle(product) }) {

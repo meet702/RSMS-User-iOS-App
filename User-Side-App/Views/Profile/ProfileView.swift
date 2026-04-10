@@ -189,7 +189,7 @@ struct ProfileView: View {
     // MARK: - Logout
     
     private var logoutButton: some View {
-        Button(action: {}) {
+        Button(action: { userManager.logout() }) {
             Text("LOG OUT")
                 .font(.subheadline)
                 .fontWeight(.bold)

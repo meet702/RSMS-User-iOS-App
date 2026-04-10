@@ -11,6 +11,7 @@ import Combine
 struct BannerCarousel: View {
     let banners: [PromoBanner]
     @State private var currentIndex = 0
+    @Environment(NavigationManager.self) private var navManager
     
     private let timer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     
@@ -53,41 +54,27 @@ struct BannerCarousel: View {
 
 struct BannerCard: View {
     let banner: PromoBanner
+    @Environment(NavigationManager.self) private var navManager
     
     var body: some View {
         ZStack {
-            // Background gradient
-            ZStack {
-                // Base dark gradient
-                LinearGradient(
-                    colors: [
-                        AppColors.surfaceGold,
-                        AppColors.surfaceDark,
-                        AppColors.background
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                
-                // Gold accent glow
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [AppColors.gold.opacity(0.15), .clear],
-                            center: .topLeading,
-                            startRadius: 0,
-                            endRadius: 200
-                        )
-                    )
-                    .frame(width: 300, height: 300)
-                    .offset(x: -80, y: -60)
-                
-                // Decorative icon
-                Image(systemName: banner.icon)
-                    .font(.system(size: 80, weight: .ultraLight))
-                    .foregroundStyle(AppColors.gold.opacity(0.08))
-                    .offset(x: 110, y: 20)
-            }
+            // Background image
+            Image(banner.imageName)
+                .resizable()
+                .scaledToFill()
+                .frame(height: 170)
+                .clipped()
+            
+            // Dark overlay for text readability
+            LinearGradient(
+                colors: [
+                    .black.opacity(0.8),
+                    .black.opacity(0.2),
+                    .clear
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
             
             // Content
             HStack {
@@ -108,7 +95,9 @@ struct BannerCard: View {
                     
                     Spacer()
                     
-                    GoldButton(title: banner.ctaText, isCompact: true)
+                    GoldButton(title: banner.ctaText, isCompact: true) {
+                        navManager.navigateToShop()
+                    }
                 }
                 .padding(20)
                 

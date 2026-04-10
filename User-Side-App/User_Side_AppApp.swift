@@ -12,6 +12,7 @@ struct User_Side_AppApp: App {
     @State private var cartManager = CartManager()
     @State private var wishlistManager = WishlistManager()
     @State private var userManager = UserManager()
+    @State private var navManager = NavigationManager()
     
     var body: some Scene {
         WindowGroup {
@@ -19,6 +20,7 @@ struct User_Side_AppApp: App {
                 .environment(cartManager)
                 .environment(wishlistManager)
                 .environment(userManager)
+                .environment(navManager)
         }
     }
 }

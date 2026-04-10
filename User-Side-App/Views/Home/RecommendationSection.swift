@@ -21,7 +21,10 @@ struct RecommendationSection: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(products.prefix(4)) { product in
-                        ProductCardHorizontal(product: product)
+                        NavigationLink(value: product) {
+                            ProductCardHorizontal(product: product)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)

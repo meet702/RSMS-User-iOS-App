@@ -10,9 +10,10 @@ import SwiftUI
 @Observable
 class UserManager {
     var currentUser: User?
+    var isAuthenticated: Bool = false
     
     init() {
-        // Initialize with a mock premium user for the LUXE experience
+        // Prepare mock user but keep authenticated false by default
         self.currentUser = User(
             id: UUID(),
             firstName: "Siddharth",
@@ -22,6 +23,18 @@ class UserManager {
             points: 12500,
             ordersCount: 24
         )
+    }
+    
+    func login() {
+        withAnimation(.easeInOut(duration: 0.6)) {
+            isAuthenticated = true
+        }
+    }
+    
+    func logout() {
+        withAnimation(.easeInOut(duration: 0.6)) {
+            isAuthenticated = false
+        }
     }
     
     func updateProfile(firstName: String, lastName: String, email: String) {

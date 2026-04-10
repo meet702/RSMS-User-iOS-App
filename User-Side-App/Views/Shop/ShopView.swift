@@ -12,6 +12,7 @@ struct ShopView: View {
     @State private var showFilter = false
     @State private var showSort = false
     @Environment(WishlistManager.self) private var wishlistManager
+    @Environment(NavigationManager.self) private var navManager
     
     private let columns = [
         GridItem(.flexible(), spacing: 14),
@@ -75,6 +76,14 @@ struct ShopView: View {
             }
             .sheet(isPresented: $showSort) {
                 SortSheet(selected: Bindable(viewModel).sortOption)
+            }
+        }
+        .onAppear {
+            if let pending = navManager.pendingCategoryFilter {
+                withAnimation {
+                    viewModel.selectedCategory = pending
+                }
+                navManager.pendingCategoryFilter = nil
             }
         }
     }
