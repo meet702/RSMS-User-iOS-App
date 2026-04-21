@@ -33,7 +33,10 @@ struct SeeAllProductsView: View {
                     // Product grid
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(products) { product in
-                            ProductCardGrid(product: product)
+                            NavigationLink(value: product) {
+                                ProductCardGrid(product: product)
+                            }
+                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -43,6 +46,9 @@ struct SeeAllProductsView: View {
                 .padding(.top, 8)
             }
             .background(AppColors.background)
+            .navigationDestination(for: Product.self) { product in
+                ProductDetailView(product: product)
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -69,5 +75,5 @@ struct SeeAllProductsView: View {
 
 #Preview {
     SeeAllProductsView(title: "New Arrivals", products: MockData.newArrivals)
-        .environment(WishlistManager())
+        .withLuxePreviewEnvironment()
 }

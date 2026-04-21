@@ -8,10 +8,13 @@
 import SwiftUI
 
 struct AppointmentSheet: View {
+    @Environment(UserManager.self) private var userManager
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDate = Date()
     @State private var note = ""
     @State private var isBooked = false
+    @State private var isLoading = false
+    @State private var errorMessage: String? = nil
     
     var body: some View {
         NavigationStack {
@@ -87,17 +90,30 @@ struct AppointmentSheet: View {
                 
                 // Book Button
                 Button(action: { 
-                    withAnimation { isBooked = true }
+                    bookAppointment()
                 }) {
-                    Text("CONFIRM APPOINTMENT")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .tracking(2)
-                        .foregroundStyle(AppColors.background)
+                    HStack {
+                        if isLoading {
+                            ProgressView().tint(AppColors.background).padding(.trailing, 8)
+                        }
+                        Text(isLoading ? "BOOKING..." : "CONFIRM APPOINTMENT")
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .tracking(2)
+                    .foregroundStyle(AppColors.background)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(LinearGradient.goldSubtle)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .disabled(isLoading)
+                
+                if let error = errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 18)
-                        .background(LinearGradient.goldSubtle)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 
                 Color.clear.frame(height: 40)
@@ -113,10 +129,15 @@ struct AppointmentSheet: View {
                 .foregroundStyle(AppColors.gold)
             
             VStack(spacing: 8) {
-                Text("APPOINTMENT SECURED")
+                Text("BOOKED")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(AppColors.pureWhite)
+                
+                Text("APPOINTMENT SECURED")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundStyle(AppColors.gold)
                 
                 Text("We look forward to welcoming you to our boutique.")
                     .font(.subheadline)
@@ -129,6 +150,44 @@ struct AppointmentSheet: View {
                 .fontWeight(.bold)
                 .foregroundStyle(AppColors.gold)
                 .padding(.top, 20)
+        }
+    }
+    
+    private func bookAppointment() {
+        guard let userId = userManager.supabaseUserId else {
+            errorMessage = "Please log in to book an appointment."
+            return
+        }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let dateString = formatter.string(from: selectedDate)
+            
+            let dto = AppointmentDTO(
+                user_id: userId,
+                appointment_date: dateString,
+                notes: note.isEmpty ? nil : note,
+                status: "pending"
+            )
+            
+            do {
+                try await SyncManager.shared.bookAppointment(dto: dto)
+                await MainActor.run {
+                    withAnimation {
+                        isBooked = true
+                        isLoading = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to book appointment. Please try again."
+                    isLoading = false
+                }
+            }
         }
     }
 }

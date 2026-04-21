@@ -9,7 +9,7 @@ import SwiftUI
 
 struct OrderTrackingView: View {
     let order: Order
-    let onCancel: () -> Void
+    let onCancel: () async -> Void
     @Environment(\.dismiss) private var dismiss
     
     @State private var showCancelPrompt = false
@@ -61,8 +61,10 @@ struct OrderTrackingView: View {
         .alert("Cancel Order", isPresented: $showCancelPrompt) {
             Button("No, keep it", role: .cancel) { }
             Button("Yes, Cancel", role: .destructive) {
-                onCancel()
-                dismiss()
+                Task {
+                    await onCancel()
+                    dismiss()
+                }
             }
         } message: {
             Text("Are you sure you want to cancel this order? This action cannot be undone.")
@@ -213,6 +215,7 @@ struct OrderTrackingView: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .darkCard()
     }
@@ -228,14 +231,13 @@ struct OrderTrackingView: View {
             
             ForEach(order.items) { item in
                 HStack(spacing: 12) {
-                    ZStack {
-                        AppColors.surfaceGold
-                        Image(systemName: item.product.imageName)
-                            .font(.system(size: 20, weight: .light))
-                            .foregroundStyle(AppColors.gold)
-                    }
-                    .frame(width: 50, height: 50)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    AsyncProductImage(product: item.product)
+                        .frame(width: 50, height: 50)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
+                        )
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.product.name)
@@ -306,6 +308,7 @@ struct OrderTrackingView: View {
             }
             .font(.subheadline)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
         .darkCard()
     }

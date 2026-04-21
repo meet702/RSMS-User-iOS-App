@@ -20,7 +20,7 @@ struct GoldButton: View {
                 .font(isCompact ? .caption : .subheadline)
                 .fontWeight(.bold)
                 .tracking(isCompact ? 1 : 2)
-                .foregroundStyle(AppColors.background)
+                .foregroundStyle(AppColors.alwaysBlack)
                 .padding(.horizontal, isCompact ? 16 : 24)
                 .padding(.vertical, isCompact ? 8 : 12)
                 .background(

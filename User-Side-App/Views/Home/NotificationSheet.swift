@@ -9,46 +9,50 @@ import SwiftUI
 
 struct NotificationSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(NotificationManager.self) private var notificationManager
+    @Environment(UserManager.self) private var userManager
     
     var body: some View {
         NavigationStack {
             ZStack {
                 AppColors.background.ignoresSafeArea()
                 
-                ScrollView {
+                if notificationManager.notifications.isEmpty {
                     VStack(spacing: 16) {
-                        notificationRow(
-                            icon: "shippingbox.fill",
-                            title: "Order Shipped",
-                            message: "Your order #LX-9021 for the Submariner Date has been shipped.",
-                            time: "2h ago",
-                            isNew: true
-                        )
-                        
-                        notificationRow(
-                            icon: "sparkles",
-                            title: "Exclusive Invitation",
-                            message: "You are invited to our private viewing of the Summer Collection.",
-                            time: "1d ago",
-                            isNew: false
-                        )
-                        
-                        notificationRow(
-                            icon: "crown.fill",
-                            title: "Loyalty Update",
-                            message: "You've earned 500 bonus points for your recent purchase.",
-                            time: "3d ago",
-                            isNew: false
-                        )
+                        Image(systemName: "bell.slash")
+                            .font(.system(size: 40))
+                            .foregroundStyle(AppColors.grayLight)
+                        Text("No notifications yet.")
+                            .font(.subheadline)
+                            .foregroundStyle(AppColors.grayLight)
                     }
-                    .padding(20)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            ForEach(notificationManager.notifications) { notif in
+                                notificationRow(
+                                    icon: notif.icon,
+                                    title: notif.title,
+                                    message: notif.message,
+                                    time: notif.timeAgo,
+                                    isNew: !notif.isRead
+                                )
+                            }
+                        }
+                        .padding(20)
+                    }
                 }
             }
             .navigationTitle("NOTIFICATIONS")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") { dismiss() }
+                    Button("Close") { 
+                        if let uid = userManager.supabaseUserId {
+                            notificationManager.markAllAsRead(userId: uid)
+                        }
+                        dismiss() 
+                    }
                         .foregroundStyle(AppColors.gold)
                 }
             }

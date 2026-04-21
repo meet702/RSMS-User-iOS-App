@@ -9,6 +9,7 @@ import SwiftUI
 
 struct OrderSuccessView: View {
     @Environment(CartManager.self) private var cartManager
+    @Environment(NavigationManager.self) private var navManager
     @Environment(\.dismiss) private var dismiss
     var onComplete: (() -> Void)? = nil
     
@@ -90,8 +91,11 @@ struct OrderSuccessView: View {
     }
     
     private func finalizePurchase() {
-        // Clear the cart when exiting
+        // Clear cart
         cartManager.clearCart()
+        
+        // Navigate to Orders Tab
+        navManager.selectedTab = .orders
         
         onComplete?()
         dismiss()
@@ -100,5 +104,6 @@ struct OrderSuccessView: View {
 
 #Preview {
     OrderSuccessView()
-        .environment(CartManager())
+        .environment(NavigationManager())
+        .withLuxePreviewEnvironment()
 }

@@ -2,7 +2,7 @@
 //  User.swift
 //  User-Side-App
 //
-//  User profile model for LUXE — membership, tiers, and stats
+//  User profile model for LUXE — membership and tiers
 //
 
 import Foundation
@@ -29,8 +29,8 @@ struct User: Identifiable, Sendable {
     var lastName: String
     var email: String
     var tier: MembershipTier
-    var points: Int
-    var ordersCount: Int
+    var avatarURL: URL?
+    var loyaltyPoints: Int = 0 
     
     var fullName: String { "\(firstName) \(lastName)" }
     

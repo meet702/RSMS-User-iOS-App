@@ -10,8 +10,8 @@ import Combine
 
 struct BannerCarousel: View {
     let banners: [PromoBanner]
+    let products: [Product]
     @State private var currentIndex = 0
-    @Environment(NavigationManager.self) private var navManager
     
     private let timer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     
@@ -20,7 +20,7 @@ struct BannerCarousel: View {
             // Banner TabView
             TabView(selection: $currentIndex) {
                 ForEach(Array(banners.enumerated()), id: \.element.id) { index, banner in
-                    BannerCard(banner: banner)
+                    BannerCard(banner: banner, allProducts: products)
                         .tag(index)
                 }
             }
@@ -54,7 +54,8 @@ struct BannerCarousel: View {
 
 struct BannerCard: View {
     let banner: PromoBanner
-    @Environment(NavigationManager.self) private var navManager
+    let allProducts: [Product]
+    @State private var showProducts = false
     
     var body: some View {
         ZStack {
@@ -96,7 +97,7 @@ struct BannerCard: View {
                     Spacer()
                     
                     GoldButton(title: banner.ctaText, isCompact: true) {
-                        navManager.navigateToShop()
+                        showProducts = true
                     }
                 }
                 .padding(20)
@@ -108,12 +109,26 @@ struct BannerCard: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
         )
+        .sheet(isPresented: $showProducts) {
+            SeeAllProductsView(
+                title: banner.title,
+                products: allProducts.filter { 
+                    $0.category.localizedCaseInsensitiveContains(banner.title) ||
+                    banner.title.localizedCaseInsensitiveContains($0.category) ||
+                    $0.name.localizedCaseInsensitiveContains(banner.title)
+                }
+            )
+        }
     }
 }
 
 #Preview {
     ZStack {
         AppColors.background.ignoresSafeArea()
-        BannerCarousel(banners: MockData.banners)
+        BannerCarousel(
+            banners: MockData.banners,
+            products: MockData.products
+        )
     }
+    .withLuxePreviewEnvironment()
 }

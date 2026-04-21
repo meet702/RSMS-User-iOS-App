@@ -11,22 +11,67 @@ import SwiftUI
 
 enum AppColors {
     // Core backgrounds
-    static let background = Color.black
-    static let surfaceDark = Color(hex: "111111")
-    static let surfaceElevated = Color(hex: "1A1A1A")
-    static let surfaceGold = Color(hex: "1A1508")
+    static let background = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? .black : .white
+    })
     
-    // Gold palette
+    static let surfaceDark = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(hex: "111111") : UIColor(hex: "F8F8F8")
+    })
+    
+    static let surfaceElevated = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(hex: "1A1A1A") : UIColor(hex: "F0F0F0")
+    })
+    
+    static let surfaceGold = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(hex: "1A1508") : UIColor(hex: "FFF9EB")
+    })
+    
+    // Gold palette (stays consistent but can adjust for contrast)
     static let gold = Color(hex: "C9A96E")
     static let goldLight = Color(hex: "E8D5A3")
     static let goldDark = Color(hex: "A8893E")
     
-    // Neutrals
-    static let pureWhite = Color.white
-    static let offWhite = Color(hex: "F5F5F5")
+    // Neutrals - Semantic Naming
+    static let pureWhite = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? .white : .black
+    })
+    
     static let grayLight = Color(hex: "999999")
     static let grayMedium = Color(hex: "666666")
-    static let grayDark = Color(hex: "333333")
+    static let grayDark = Color(UIColor { trait in
+        trait.userInterfaceStyle == .dark ? UIColor(hex: "333333") : UIColor(hex: "E0E0E0")
+    })
+    
+    // Absolute Colors for contrast (do not flip)
+    static let alwaysBlack = Color.black
+    static let alwaysWhite = Color.white
+}
+
+// Add hex support to UIColor for the dynamic providers
+extension UIColor {
+    convenience init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            red: CGFloat(r) / 255,
+            green: CGFloat(g) / 255,
+            blue: CGFloat(b) / 255,
+            alpha: CGFloat(a) / 255
+        )
+    }
 }
 
 // MARK: - Hex Color Support

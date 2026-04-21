@@ -2,13 +2,26 @@
 //  HomeSearchBar.swift
 //  User-Side-App
 //
-//  Search bar with filter button for LUXE Home tab
+//  Search bar for LUXE Home tab — submitting shows filtered results in a sheet
 //
 
 import SwiftUI
 
 struct HomeSearchBar: View {
     @Binding var searchText: String
+    let products: [Product]
+    var onSubmit: (() -> Void)? = nil
+    @State private var showResults = false
+    
+    private var searchResults: [Product] {
+        let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return [] }
+        return products.filter {
+            $0.name.lowercased().contains(query) ||
+            $0.brand.lowercased().contains(query) ||
+            $0.category.lowercased().contains(query)
+        }
+    }
     
     var body: some View {
         HStack(spacing: 12) {
@@ -24,17 +37,29 @@ struct HomeSearchBar: View {
             )
             .font(.subheadline)
             .foregroundStyle(AppColors.pureWhite)
+            .submitLabel(.search)
+            .onSubmit {
+                guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+                showResults = true
+            }
             
-            // Divider
-            Rectangle()
-                .fill(AppColors.grayDark)
-                .frame(width: 1, height: 20)
-            
-            // Filter button
-            Button(action: {}) {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(AppColors.gold)
+            if !searchText.isEmpty {
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(AppColors.grayMedium)
+                }
+            } else {
+                // Divider + filter icon when empty
+                Rectangle()
+                    .fill(AppColors.grayDark)
+                    .frame(width: 1, height: 20)
+                
+                Button(action: { showResults = true }) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppColors.gold)
+                }
             }
         }
         .padding(.horizontal, 16)
@@ -46,12 +71,19 @@ struct HomeSearchBar: View {
                 .stroke(AppColors.grayDark.opacity(0.5), lineWidth: 1)
         )
         .padding(.horizontal, 20)
+        .sheet(isPresented: $showResults) {
+            SeeAllProductsView(
+                title: searchText.isEmpty ? "All Products" : "Results for \"\(searchText)\"",
+                products: searchText.isEmpty ? products : searchResults
+            )
+        }
     }
 }
 
 #Preview {
     ZStack {
         AppColors.background.ignoresSafeArea()
-        HomeSearchBar(searchText: .constant(""))
+        HomeSearchBar(searchText: .constant(""), products: MockData.products)
     }
+    .withLuxePreviewEnvironment()
 }

@@ -18,6 +18,28 @@ enum OrderStatus: String, CaseIterable, Codable, Sendable {
     var isActive: Bool {
         return self != .delivered && self != .cancelled
     }
+    
+    /// Fuzzy initializer to handle database variations
+    static func from(string: String) -> OrderStatus {
+        let normalized = string.lowercased().trimmingCharacters(in: .whitespaces)
+        
+        switch normalized {
+        case "placed", "order placed", "order_placed", "pending":
+            return .placed
+        case "processing", "preparing":
+            return .processing
+        case "dispatched", "shipped", "on_the_way":
+            return .dispatched
+        case "out for delivery", "out_for_delivery", "near_you":
+            return .outForDelivery
+        case "delivered", "completed", "received":
+            return .delivered
+        case "cancelled", "canceled", "rejected":
+            return .cancelled
+        default:
+            return .placed
+        }
+    }
 }
 
 struct TrackingStep: Identifiable, Hashable, Sendable {

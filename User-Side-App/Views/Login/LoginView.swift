@@ -2,7 +2,7 @@
 //  LoginView.swift
 //  User-Side-App
 //
-//  LUXE Login Experience — Gold-on-Black entry screen
+//  DIOR Login Experience — Gold-on-Black entry with Supabase Auth
 //
 
 import SwiftUI
@@ -12,8 +12,14 @@ struct LoginView: View {
     
     @State private var email = ""
     @State private var password = ""
-    @State private var isLoading = false
     @State private var animateContent = false
+    @State private var showSignUp = false
+    
+    // Sign-up fields
+    @State private var signUpFirstName = ""
+    @State private var signUpLastName = ""
+    @State private var signUpEmail = ""
+    @State private var signUpPassword = ""
     
     var body: some View {
         ZStack {
@@ -47,12 +53,22 @@ struct LoginView: View {
                 .offset(y: animateContent ? 0 : 20)
                 .opacity(animateContent ? 1 : 0)
                 
+                // Error message
+                if let error = userManager.authError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                        .padding(.top, -20)
+                }
+                
                 // Sign In Button
                 Button(action: { handleLogin() }) {
                     ZStack {
-                        if isLoading {
+                        if userManager.isLoading {
                             ProgressView()
-                                .tint(AppColors.background)
+                                .tint(AppColors.alwaysBlack)
                         } else {
                             Text("SIGN IN")
                                 .font(.subheadline)
@@ -60,16 +76,85 @@ struct LoginView: View {
                                 .tracking(3)
                         }
                     }
-                    .foregroundStyle(AppColors.background)
+                    .foregroundStyle(AppColors.alwaysBlack)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
                     .background(LinearGradient.goldShimmer)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: AppColors.gold.opacity(0.3), radius: 10, y: 5)
                 }
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
+                .disabled(userManager.isLoading || email.isEmpty || password.isEmpty)
                 .padding(.horizontal, 30)
                 .offset(y: animateContent ? 0 : 40)
+                .opacity(animateContent ? 1 : 0)
+                
+                // OR Divider
+                HStack(spacing: 16) {
+                    Rectangle().fill(AppColors.grayDark.opacity(0.5)).frame(height: 1)
+                    Text("OR")
+                        .font(.caption2).fontWeight(.bold).tracking(2)
+                        .foregroundStyle(AppColors.grayMedium)
+                    Rectangle().fill(AppColors.grayDark.opacity(0.5)).frame(height: 1)
+                }
+                .padding(.horizontal, 30)
+                .padding(.vertical, -12)
+                .opacity(animateContent ? 1 : 0)
+                
+                // Continue with Google
+                Button(action: {
+                    Task { await userManager.signInWithGoogle() }
+                }) {
+                    HStack(spacing: 12) {
+                        // Google "G" logo
+                        ZStack {
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 22, height: 22)
+                            Text("G")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.red, .yellow, .green, .blue],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                        
+                        Text("Continue with Google")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundStyle(AppColors.pureWhite)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(AppColors.surfaceDark)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(AppColors.grayDark.opacity(0.5), lineWidth: 1)
+                    )
+                }
+                .disabled(userManager.isLoading)
+                .padding(.horizontal, 30)
+                .opacity(animateContent ? 1 : 0)
+                
+                // ── DEV BYPASS ── remove before release
+                Button(action: { userManager.login() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 10))
+                        Text("Dev · Skip Login")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundStyle(AppColors.gold.opacity(0.5))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .overlay(
+                        Capsule()
+                            .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
+                    )
+                }
                 .opacity(animateContent ? 1 : 0)
                 
                 Spacer()
@@ -78,7 +163,7 @@ struct LoginView: View {
                 HStack(spacing: 4) {
                     Text("Don't have an account?")
                         .foregroundStyle(AppColors.grayLight)
-                    Button("Join LUXE") { }
+                    Button("Join DIOR") { showSignUp = true }
                         .fontWeight(.bold)
                         .foregroundStyle(AppColors.gold)
                 }
@@ -92,18 +177,90 @@ struct LoginView: View {
                 animateContent = true
             }
         }
+        .sheet(isPresented: $showSignUp) {
+            signUpSheet
+        }
+    }
+    
+    // MARK: - Sign Up Sheet
+    
+    private var signUpSheet: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.background.ignoresSafeArea()
+                
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        Text("DIOR")
+                            .font(.system(size: 36, weight: .ultraLight))
+                            .tracking(12)
+                            .foregroundStyle(LinearGradient.goldSubtle)
+                            .padding(.top, 20)
+                        
+                        Text("Create your account")
+                            .font(.subheadline)
+                            .foregroundStyle(AppColors.grayLight)
+                        
+                        VStack(spacing: 16) {
+                            customTextField(placeholder: "First Name", text: $signUpFirstName, icon: "person")
+                            customTextField(placeholder: "Last Name", text: $signUpLastName, icon: "person")
+                            customTextField(placeholder: "Email Address", text: $signUpEmail, icon: "envelope")
+                            customSecureField(placeholder: "Password (min 6 chars)", text: $signUpPassword, icon: "lock")
+                        }
+                        .padding(.horizontal, 6)
+                        
+                        if let error = userManager.authError {
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                        }
+                        
+                        Button(action: { handleSignUp() }) {
+                            ZStack {
+                                if userManager.isLoading {
+                                    ProgressView().tint(AppColors.alwaysBlack)
+                                } else {
+                                    Text("CREATE ACCOUNT")
+                                        .font(.subheadline).fontWeight(.bold).tracking(3)
+                                }
+                            }
+                            .foregroundStyle(AppColors.alwaysBlack)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(LinearGradient.goldShimmer)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .shadow(color: AppColors.gold.opacity(0.3), radius: 10, y: 5)
+                        }
+                        .disabled(userManager.isLoading || signUpFirstName.isEmpty || signUpLastName.isEmpty || signUpEmail.isEmpty || signUpPassword.count < 6)
+                    }
+                    .padding(24)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { showSignUp = false }
+                        .foregroundStyle(AppColors.grayLight)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("JOIN DIOR")
+                        .font(.headline).fontWeight(.bold).tracking(4).foregroundStyle(AppColors.gold)
+                }
+            }
+        }
     }
     
     // MARK: - Components
     
     private var headerView: some View {
         VStack(spacing: 12) {
-            Text("LUXE")
+            Text("DIOR")
                 .font(.system(size: 60, weight: .ultraLight))
                 .tracking(20)
                 .foregroundStyle(LinearGradient.goldSubtle)
             
-            Text("RETAIL MANAGEMENT")
+            Text("MAISON DE COUTURE")
                 .font(.caption2)
                 .fontWeight(.bold)
                 .tracking(8)
@@ -143,7 +300,8 @@ struct LoginView: View {
             )
             .font(.subheadline)
             .foregroundStyle(AppColors.pureWhite)
-            .autocapitalization(.none)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
         }
         .padding(18)
         .background(AppColors.surfaceDark)
@@ -178,12 +336,22 @@ struct LoginView: View {
     // MARK: - Actions
     
     private func handleLogin() {
-        isLoading = true
-        // Simulate network delay
         Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            userManager.login()
-            isLoading = false
+            await userManager.signIn(email: email, password: password)
+        }
+    }
+    
+    private func handleSignUp() {
+        Task {
+            await userManager.signUp(
+                email: signUpEmail,
+                password: signUpPassword,
+                firstName: signUpFirstName,
+                lastName: signUpLastName
+            )
+            if userManager.isAuthenticated {
+                showSignUp = false
+            }
         }
     }
 }

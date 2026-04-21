@@ -9,25 +9,47 @@ import SwiftUI
 
 @Observable
 class WishlistManager {
-    var productIDs: Set<UUID> = []
+    var items: [Product] = []
     
-    func isWishlisted(_ product: Product) -> Bool {
-        productIDs.contains(product.id)
+    var count: Int {
+        items.count
     }
     
-    func toggle(_ product: Product) {
-        if productIDs.contains(product.id) {
-            productIDs.remove(product.id)
-        } else {
-            productIDs.insert(product.id)
+    // MARK: - Remote Sync
+    
+    func loadWishlist(userId: UUID) async {
+        do {
+            self.items = try await SyncManager.shared.fetchWishlist(userId: userId)
+        } catch {
+            print("Failed to load wishlist: \(error)")
         }
     }
     
-    var count: Int {
-        productIDs.count
+    // MARK: - Actions
+    
+    func isWishlisted(_ product: Product) -> Bool {
+        items.contains { $0.id == product.id }
     }
     
-    var wishlistedProducts: [Product] {
-        MockData.products.filter { productIDs.contains($0.id) }
+    func toggle(_ product: Product, userId: UUID? = nil) {
+        if let index = items.firstIndex(where: { $0.id == product.id }) {
+            items.remove(at: index)
+            
+            // Sync remove
+            if let userId = userId {
+                Task {
+                    try? await SyncManager.shared.syncRemoveFromWishlist(userId: userId, productId: product.id)
+                }
+            }
+        } else {
+            items.append(product)
+            
+            // Sync add
+            if let userId = userId {
+                Task {
+                    try? await SyncManager.shared.syncAddToWishlist(userId: userId, productId: product.id)
+                }
+            }
+        }
     }
 }

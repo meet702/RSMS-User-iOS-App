@@ -2,7 +2,7 @@
 //  CategoryCard.swift
 //  User-Side-App
 //
-//  Category tile with icon for LUXE
+//  Premium iOS-standard category card — elegant pill with icon, name, and count
 //
 
 import SwiftUI
@@ -11,55 +11,86 @@ struct CategoryCard: View {
     let category: Category
     var onTap: (() -> Void)? = nil
     
-    @State private var isPressed = false
-    
     var body: some View {
         Button(action: { onTap?() }) {
             VStack(spacing: 12) {
-                // Icon circle with gold border
+                // Circular icon area
                 ZStack {
                     Circle()
                         .fill(AppColors.surfaceDark)
-                        .frame(width: 64, height: 64)
+                        .frame(width: 72, height: 72)
+                        .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
                     
                     Circle()
                         .stroke(
                             LinearGradient(
-                                colors: [AppColors.gold, AppColors.goldDark.opacity(0.5)],
+                                colors: [AppColors.gold.opacity(0.8), AppColors.gold.opacity(0.1)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
                             lineWidth: 1.5
                         )
-                        .frame(width: 64, height: 64)
+                        .frame(width: 72, height: 72)
                     
-                    Image(category.icon)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 64, height: 64)
-                        .clipShape(Circle())
+                    // Subtle inner glow
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [AppColors.gold.opacity(0.15), .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 36
+                            )
+                        )
+                        .frame(width: 72, height: 72)
+                    
+                    // Icon
+                    Image(systemName: category.icon)
+                        .font(.system(size: 26, weight: .light))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppColors.goldLight, AppColors.gold],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: AppColors.gold.opacity(0.3), radius: 3)
                 }
                 
-                // Category name
-                Text(category.name)
-                    .font(.caption)
-                    .fontWeight(.medium)
+                // Elegant Label
+                Text(category.name.uppercased())
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(1)
                     .foregroundStyle(AppColors.pureWhite)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .multilineTextAlignment(.center)
             }
-            .frame(width: 80)
+            .frame(width: 100)
         }
-        .buttonStyle(PressButtonStyle())
+        .buttonStyle(CategoryButtonStyle())
+    }
+}
+
+// MARK: - Custom Button Style
+
+struct CategoryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+            .opacity(configuration.isPressed ? 0.8 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
 #Preview {
     ZStack {
         AppColors.background.ignoresSafeArea()
-        HStack(spacing: 16) {
-            CategoryCard(category: Category(name: "Watches", icon: "clock.fill", productCount: 42))
-            CategoryCard(category: Category(name: "Jewelry", icon: "sparkles", productCount: 38))
-            CategoryCard(category: Category(name: "Fashion", icon: "tshirt.fill", productCount: 65))
+        HStack(spacing: 12) {
+            CategoryCard(category: MockData.categories[0])
+            CategoryCard(category: MockData.categories[1])
+            CategoryCard(category: MockData.categories[2])
+            CategoryCard(category: MockData.categories[3])
         }
     }
 }

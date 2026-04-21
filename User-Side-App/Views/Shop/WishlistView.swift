@@ -17,7 +17,7 @@ struct WishlistView: View {
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            if wishlistManager.wishlistedProducts.isEmpty {
+            if wishlistManager.items.isEmpty {
                 emptyState
             } else {
                 VStack(spacing: 16) {
@@ -32,7 +32,7 @@ struct WishlistView: View {
                     
                     // Product grid
                     LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(wishlistManager.wishlistedProducts) { product in
+                        ForEach(wishlistManager.items) { product in
                             NavigationLink(value: product) {
                                 ProductCardGrid(product: product)
                             }
@@ -47,6 +47,9 @@ struct WishlistView: View {
             }
         }
         .background(AppColors.background)
+        .navigationDestination(for: Product.self) { product in
+            ProductDetailView(product: product)
+        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -106,6 +109,5 @@ struct WishlistView: View {
     NavigationStack {
         WishlistView()
     }
-    .environment(WishlistManager())
-    .environment(CartManager())
+    .withLuxePreviewEnvironment()
 }

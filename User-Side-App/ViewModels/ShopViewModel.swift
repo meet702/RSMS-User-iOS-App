@@ -12,8 +12,12 @@ class ShopViewModel {
     var searchText: String = ""
     var selectedCategory: String? = nil
     var selectedBrands: Set<String> = []
-    var maxBudget: Double = 2_000_000
+    var maxBudget: Double = 100_000_000
     var sortOption: SortOption = .popular
+    var isLoading: Bool = false
+    
+    var allProducts: [Product] = []
+    private var allCategories: [Category] = []
     
     enum SortOption: String, CaseIterable {
         case popular = "Popular"
@@ -22,14 +26,41 @@ class ShopViewModel {
         case priceHighLow = "Price: High → Low"
     }
     
-    var allProducts: [Product] { MockData.products }
+    init() {
+        Task { await loadData() }
+    }
+    
+    func loadData() async {
+        isLoading = true
+        do {
+            async let pTask = SyncManager.shared.fetchProducts()
+            async let cTask = SyncManager.shared.fetchCategories()
+            
+            let (products, rawCategories) = try await (pTask, cTask)
+            self.allProducts = products
+            
+            // Only show categories that have products in them
+            self.allCategories = rawCategories.filter { cat in
+                products.contains { p in
+                    p.category.localizedCaseInsensitiveContains(cat.name) ||
+                    cat.name.localizedCaseInsensitiveContains(p.category)
+                }
+            }
+        } catch {
+            print("Shop data sync failed: \(error)")
+        }
+        isLoading = false
+    }
     
     var filteredProducts: [Product] {
         var products = allProducts
         
         // Category filter
         if let category = selectedCategory {
-            products = products.filter { $0.category == category }
+            products = products.filter { 
+                $0.category.localizedCaseInsensitiveContains(category) || 
+                category.localizedCaseInsensitiveContains($0.category)
+            }
         }
         
         // Brand filter
@@ -69,20 +100,20 @@ class ShopViewModel {
     }
     
     var categoryNames: [String] {
-        MockData.categories.map(\.name)
+        allCategories.map(\.name)
     }
     
     var activeFilterCount: Int {
         var count = 0
         if !selectedBrands.isEmpty { count += 1 }
-        if maxBudget < 2_000_000 { count += 1 }
+        if maxBudget < 100_000_000 { count += 1 }
         return count
     }
     
     func resetFilters() {
         selectedCategory = nil
         selectedBrands = []
-        maxBudget = 2_000_000
+        maxBudget = 100_000_000
         searchText = ""
         sortOption = .popular
     }

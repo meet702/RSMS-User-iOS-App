@@ -38,14 +38,13 @@ struct OrderCardView: View {
             HStack(spacing: 12) {
                 // Image of first item
                 if let firstItem = order.items.first {
-                    ZStack {
-                        AppColors.surfaceGold
-                        Image(systemName: firstItem.product.imageName)
-                            .font(.system(size: 24, weight: .light))
-                            .foregroundStyle(AppColors.gold)
-                    }
-                    .frame(width: 60, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    AsyncProductImage(product: firstItem.product)
+                        .frame(width: 60, height: 60)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
+                        )
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text(firstItem.product.name)
@@ -90,20 +89,34 @@ struct OrderCardView: View {
     
     @ViewBuilder
     private var statusPill: some View {
-        let isWarning = order.status == .cancelled
+        let isCancelled = order.status == .cancelled
+        let isDelivered = order.status == .delivered
         let isActive = order.status.isActive
         
-        Text(order.status.rawValue.uppercased())
+        return Text(order.status.rawValue.uppercased())
             .font(.system(size: 10, weight: .bold))
             .tracking(1)
-            .foregroundStyle(isWarning ? .red : (isActive ? AppColors.background : AppColors.gold))
+            .foregroundStyle(
+                isCancelled ? .red : 
+                isDelivered ? AppColors.gold : 
+                AppColors.background
+            )
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(isWarning ? Color.red.opacity(0.2) : (isActive ? AppColors.gold : AppColors.surfaceGold))
+            .background(
+                isCancelled ? Color.red.opacity(0.15) : 
+                isDelivered ? AppColors.surfaceDark : 
+                AppColors.gold
+            )
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .stroke(isWarning ? .red : AppColors.gold, lineWidth: isActive ? 0 : 1)
+                    .stroke(
+                        isCancelled ? .red : 
+                        isDelivered ? AppColors.gold : 
+                        .clear, 
+                        lineWidth: 1
+                    )
             )
     }
 }

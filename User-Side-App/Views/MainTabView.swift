@@ -2,7 +2,8 @@
 //  MainTabView.swift
 //  User-Side-App
 //
-//  LUXE — iOS 26 Liquid Glass tab navigation
+//  DIOR — iOS 26 Liquid Glass tab navigation (4 tabs)
+//  Profile is presented as a modal from the Home header.
 //
 
 import SwiftUI
@@ -12,7 +13,7 @@ struct MainTabView: View {
     @Environment(CartManager.self) private var cartManager
     
     enum AppTab: Hashable {
-        case home, shop, cart, orders, profile
+        case home, shop, cart, orders
     }
     
     var body: some View {
@@ -31,11 +32,9 @@ struct MainTabView: View {
             .badge(cartManager.totalItems)
             
             Tab("Orders", systemImage: "shippingbox.fill", value: AppTab.orders) {
-                OrdersView()
-            }
-            
-            Tab("Profile", systemImage: "person.fill", value: AppTab.profile) {
-                ProfileView()
+                NavigationStack {
+                    OrdersView()
+                }
             }
         }
         .tint(AppColors.gold)
@@ -50,7 +49,5 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
-        .preferredColorScheme(.dark)
-        .environment(CartManager())
-        .environment(WishlistManager())
+        .withLuxePreviewEnvironment()
 }

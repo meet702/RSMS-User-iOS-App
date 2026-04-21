@@ -2,7 +2,7 @@
 //  Product.swift
 //  User-Side-App
 //
-//  Product data model for LUXE
+//  Product data model for LUXE — with remote image URL support
 //
 
 import Foundation
@@ -11,9 +11,10 @@ struct Product: Identifiable, Hashable, Sendable {
     let id: UUID
     let name: String
     let brand: String
-    let price: Double
+    var price: Double
     let originalPrice: Double?
-    let imageName: String
+    let imageName: String      // local Asset name (may not exist → falls back to imageURL)
+    let imageURL: String?      // remote URL for web-scraped product images
     let category: String
     let isNew: Bool
     let rating: Double
@@ -26,7 +27,8 @@ struct Product: Identifiable, Hashable, Sendable {
         brand: String,
         price: Double,
         originalPrice: Double? = nil,
-        imageName: String,
+        imageName: String = "",
+        imageURL: String? = nil,
         category: String,
         isNew: Bool = false,
         rating: Double = 4.5,
@@ -39,6 +41,7 @@ struct Product: Identifiable, Hashable, Sendable {
         self.price = price
         self.originalPrice = originalPrice
         self.imageName = imageName
+        self.imageURL = imageURL
         self.category = category
         self.isNew = isNew
         self.rating = rating

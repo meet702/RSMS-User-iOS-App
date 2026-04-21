@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CartView: View {
     @Environment(CartManager.self) private var cartManager
+    @Environment(UserManager.self) private var userManager
     @State private var showCheckout = false
     
     var body: some View {
@@ -26,7 +27,7 @@ struct CartView: View {
                     checkoutFooter
                 }
             }
-            .navigationTitle("CART")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -46,53 +47,63 @@ struct CartView: View {
     // MARK: - Empty State
     
     private var emptyCartView: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(AppColors.surfaceGold.opacity(0.3))
-                    .frame(width: 120, height: 120)
+        VStack {
+            Spacer()
+            VStack(spacing: 28) {
+                ZStack {
+                    Circle()
+                        .fill(AppColors.surfaceGold.opacity(0.25))
+                        .frame(width: 120, height: 120)
+                    Circle()
+                        .stroke(AppColors.gold.opacity(0.15), lineWidth: 1)
+                        .frame(width: 120, height: 120)
+                    Image(systemName: "cart")
+                        .font(.system(size: 44, weight: .ultraLight))
+                        .foregroundStyle(LinearGradient.goldSubtle)
+                }
                 
-                Image(systemName: "cart.fill")
-                    .font(.system(size: 40, weight: .light))
-                    .foregroundStyle(
-                        LinearGradient.goldSubtle
-                    )
-            }
-            
-            VStack(spacing: 8) {
-                Text("Your bag is empty")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundStyle(AppColors.pureWhite)
+                VStack(spacing: 10) {
+                    Text("Your bag is empty")
+                        .font(.title3).fontWeight(.bold)
+                        .foregroundStyle(AppColors.pureWhite)
+                    Text("Explore our exclusive collection\nand start your DIOR journey.")
+                        .font(.subheadline).foregroundStyle(AppColors.grayLight)
+                        .multilineTextAlignment(.center).lineSpacing(4)
+                }
                 
-                Text("Explore our exclusive collection and start your LUXE journey.")
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.grayLight)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
+                Rectangle()
+                    .fill(LinearGradient(colors: [.clear, AppColors.gold.opacity(0.4), .clear],
+                                        startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 1).padding(.horizontal, 60)
             }
-            
-            Rectangle()
-                .fill(AppColors.gold.opacity(0.3))
-                .frame(width: 50, height: 1)
+            Spacer()
         }
-        .padding(.top, 100)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - Cart Content
     
     private var cartContent: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 16) {
-                ForEach(cartManager.items) { item in
-                    CartItemRow(item: item)
-                }
-                
-                // Extra space for footer
-                Color.clear.frame(height: 180)
+        List {
+            ForEach(cartManager.items) { item in
+                CartItemRow(item: item)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
             }
-            .padding(20)
+            .onDelete { indexSet in
+                for index in indexSet {
+                    cartManager.removeFromCart(item: cartManager.items[index], userId: userManager.supabaseUserId)
+                }
+            }
+            
+            // Extra space for footer
+            Color.clear.frame(height: 180)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
     
     // MARK: - Checkout Footer
@@ -174,20 +185,15 @@ struct CartView: View {
 struct CartItemRow: View {
     let item: CartItem
     @Environment(CartManager.self) private var cartManager
+    @Environment(UserManager.self) private var userManager
     
     var body: some View {
         HStack(spacing: 16) {
-            // Product Image
-            ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppColors.surfaceElevated)
-                
-                Image(systemName: item.product.imageName)
-                    .font(.system(size: 30, weight: .ultraLight))
-                    .foregroundStyle(AppColors.gold.opacity(0.4))
-            }
-            .frame(width: 90, height: 110)
-            .goldBorder(cornerRadius: 12)
+            // Product Image — AsyncProductImage handles URL + fallback
+            AsyncProductImage(product: item.product)
+                .frame(width: 90, height: 110)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .goldBorder(cornerRadius: 12)
             
             // Item Info
             VStack(alignment: .leading, spacing: 6) {
@@ -224,14 +230,17 @@ struct CartItemRow: View {
                     
                     // Quantity management
                     HStack(spacing: 12) {
-                        Button(action: { cartManager.updateQuantity(for: item, quantity: item.quantity - 1) }) {
-                            Image(systemName: "minus")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(AppColors.pureWhite)
+                        Button(action: {
+                            cartManager.updateQuantity(for: item, quantity: item.quantity - 1, userId: userManager.supabaseUserId)
+                        }) {
+                            Image(systemName: item.quantity == 1 ? "trash" : "minus")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(item.quantity == 1 ? Color.red.opacity(0.8) : AppColors.pureWhite)
                                 .frame(width: 28, height: 28)
                                 .background(AppColors.surfaceElevated)
                                 .clipShape(Circle())
                         }
+                        .buttonStyle(.plain)
                         
                         Text("\(item.quantity)")
                             .font(.subheadline)
@@ -239,14 +248,17 @@ struct CartItemRow: View {
                             .foregroundStyle(AppColors.pureWhite)
                             .frame(minWidth: 20)
                         
-                        Button(action: { cartManager.updateQuantity(for: item, quantity: item.quantity + 1) }) {
+                        Button(action: {
+                            cartManager.updateQuantity(for: item, quantity: item.quantity + 1, userId: userManager.supabaseUserId)
+                        }) {
                             Image(systemName: "plus")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(AppColors.background)
                                 .frame(width: 28, height: 28)
                                 .background(AppColors.gold)
                                 .clipShape(Circle())
                         }
+                        .buttonStyle(.plain)
                     }
                     .padding(4)
                     .background(AppColors.surfaceDark)
@@ -263,8 +275,11 @@ struct CartItemRow: View {
                 .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
         )
     }
+    
+
 }
 
 #Preview {
     CartView()
+        .withLuxePreviewEnvironment()
 }

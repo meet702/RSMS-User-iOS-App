@@ -67,7 +67,7 @@ struct AuthenticityView: View {
                 authenticityFeature(
                     icon: "arrow.triangle.2.circlepath",
                     title: "Lifetime Guarantee",
-                    subtitle: "Free verification at any LUXE store"
+                    subtitle: "Free verification at any DIOR boutique"
                 )
             }
             .padding(16)

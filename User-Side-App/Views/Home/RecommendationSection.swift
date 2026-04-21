@@ -14,7 +14,7 @@ struct RecommendationSection: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            SectionHeader(title: "Curated for You ✨") {
+            SectionHeader(title: "Curated for You ") {
                 showAll = true
             }
             
@@ -43,5 +43,5 @@ struct RecommendationSection: View {
             RecommendationSection(products: MockData.products)
         }
     }
-    .environment(WishlistManager())
+    .withLuxePreviewEnvironment()
 }

@@ -85,8 +85,8 @@ struct FilterView: View {
                 
                 Slider(
                     value: $viewModel.maxBudget,
-                    in: 10_000...2_000_000,
-                    step: 10_000
+                    in: 10_000...100_000_000,
+                    step: 100_000
                 )
                 .tint(AppColors.gold)
                 
@@ -95,7 +95,7 @@ struct FilterView: View {
                         .font(.caption2)
                         .foregroundStyle(AppColors.grayLight)
                     Spacer()
-                    Text("₹20L")
+                    Text("₹10Cr")
                         .font(.caption2)
                         .foregroundStyle(AppColors.grayLight)
                 }

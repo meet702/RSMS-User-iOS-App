@@ -10,15 +10,49 @@ import SwiftUI
 @Observable
 class HomeViewModel {
     var searchText: String = ""
-    var currentBannerIndex: Int = 0
+    var isLoading: Bool = false
     
-    let categories: [Category] = MockData.categories
-    let featuredProducts: [Product] = MockData.featuredProducts
-    let newArrivals: [Product] = MockData.newArrivals
-    let banners: [PromoBanner] = MockData.banners
+    var categories: [Category] = []
+    var allProducts: [Product] = [] // All products from remote
     
-    // Recommendations (in real app, this would be AI-driven)
+    // Dynamic lists derived from remote product state
+    var featuredProducts: [Product] {
+        allProducts.filter { $0.price > 100_000 }.prefix(6).map { $0 }
+    }
+    
+    var newArrivals: [Product] {
+        allProducts.prefix(8).map { $0 }
+    }
+    
     var recommendations: [Product] {
-        MockData.products
+        allProducts.shuffled().prefix(4).map { $0 }
+    }
+    
+    let banners: [PromoBanner] = MockData.banners // Keep static for now
+    
+    init() {
+        Task { await loadData() }
+    }
+    
+    func loadData() async {
+        isLoading = true
+        do {
+            async let productsTask = SyncManager.shared.fetchProducts()
+            async let categoriesTask = SyncManager.shared.fetchCategories()
+            
+            let (products, rawCategories) = try await (productsTask, categoriesTask)
+            self.allProducts = products
+            
+            // Only show categories that actually have products in the synced list
+            self.categories = rawCategories.filter { cat in
+                products.contains { p in
+                    p.category.localizedCaseInsensitiveContains(cat.name) ||
+                    cat.name.localizedCaseInsensitiveContains(p.category)
+                }
+            }
+        } catch {
+            print("Failed to sync home data: \(error)")
+        }
+        isLoading = false
     }
 }

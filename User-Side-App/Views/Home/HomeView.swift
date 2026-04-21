@@ -10,6 +10,12 @@ import SwiftUI
 struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     @Environment(NavigationManager.self) private var navManager
+    @Environment(UserManager.self) private var userManager
+    @Environment(NotificationManager.self) private var notificationManager
+    @Environment(ThemeManager.self) private var themeManager
+    @State private var showProfile = false
+    @State private var showOffersSheet = false
+    @State private var activeOffers: [OfferDTO] = []
     
     var body: some View {
         NavigationStack {
@@ -20,13 +26,22 @@ struct HomeView: View {
                     headerSection
                     
                     // MARK: - Search Bar
-                    HomeSearchBar(searchText: $viewModel.searchText)
+                    HomeSearchBar(
+                        searchText: $viewModel.searchText,
+                        products: viewModel.allProducts
+                    )
                     
                     // MARK: - Banner Carousel
-                    BannerCarousel(banners: viewModel.banners)
+                    BannerCarousel(
+                        banners: viewModel.banners,
+                        products: viewModel.allProducts
+                    )
                     
                     // MARK: - Categories
-                    CategorySection(categories: viewModel.categories)
+                    CategorySection(
+                        categories: viewModel.categories,
+                        products: viewModel.allProducts
+                    )
                     
                     // Gold divider
                     goldDivider
@@ -49,8 +64,8 @@ struct HomeView: View {
                     // MARK: - Recommendations
                     RecommendationSection(products: viewModel.recommendations)
                     
-                    // MARK: - Loyalty Banner
-                    loyaltyBanner
+                    // MARK: - Offers Banner
+                    offersBanner
                     
                     // MARK: - Appointment Teaser
                     appointmentTeaser
@@ -60,9 +75,67 @@ struct HomeView: View {
                 }
                 .padding(.top, 8)
             }
+            .refreshable {
+                await viewModel.loadData()
+            }
             .background(AppColors.background)
             .navigationDestination(for: Product.self) { product in
                 ProductDetailView(product: product)
+            }
+            .sheet(isPresented: $showProfile) {
+                ProfileView()
+            }
+            .sheet(isPresented: $showOffersSheet) {
+                NavigationStack {
+                    ZStack {
+                        AppColors.background.ignoresSafeArea()
+                        ScrollView {
+                            if activeOffers.isEmpty {
+                                VStack(spacing: 16) {
+                                    Image(systemName: "tag.slash")
+                                        .font(.system(size: 40))
+                                        .foregroundStyle(AppColors.grayLight)
+                                    Text("No Active Offers")
+                                        .font(.headline)
+                                        .foregroundStyle(AppColors.pureWhite)
+                                }
+                                .padding(.top, 100)
+                            } else {
+                                VStack(spacing: 16) {
+                                    ForEach(activeOffers) { offer in
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(offer.name).font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.gold)
+                                                if let code = offer.coupon_code {
+                                                    Text("Code: \(code)").font(.caption).foregroundStyle(AppColors.grayLight)
+                                                }
+                                            }
+                                            Spacer()
+                                            if offer.discount_type == "percentage" {
+                                                Text("\(Int(offer.discount_value))% OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                                            } else {
+                                                Text("₹\(Int(offer.discount_value)) OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                                            }
+                                        }
+                                        .padding()
+                                        .background(AppColors.surfaceDark)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    }
+                                }
+                                .padding()
+                            }
+                        }
+                    }
+                    .navigationTitle("Active Offers")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Done") { showOffersSheet = false }
+                                .foregroundStyle(AppColors.gold)
+                        }
+                    }
+                }
+                .presentationDetents([.medium])
             }
         }
     }
@@ -72,7 +145,7 @@ struct HomeView: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text("LUXE")
+                Text("DIOR")
                     .font(.title)
                     .fontWeight(.bold)
                     .tracking(8)
@@ -100,11 +173,28 @@ struct HomeView: View {
                         .foregroundStyle(AppColors.pureWhite)
                     
                     // Notification dot
-                    Circle()
-                        .fill(AppColors.gold)
-                        .frame(width: 8, height: 8)
-                        .offset(x: 2, y: -2)
+                    if notificationManager.hasUnreadNotifications {
+                        Circle()
+                            .fill(AppColors.gold)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 2, y: -2)
+                    }
                 }
+            }
+            .padding(.trailing, 8)
+            
+            // Profile Icon
+            Button(action: { showProfile = true }) {
+                ZStack {
+                    Circle()
+                        .fill(LinearGradient.goldSubtle)
+                        .frame(width: 32, height: 32)
+                    
+                    Text(userManager.currentUser?.initials ?? "??")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(AppColors.alwaysBlack)
+                }
+                .overlay(Circle().stroke(AppColors.gold.opacity(0.3), lineWidth: 1.5))
             }
         }
         .padding(.horizontal, 20)
@@ -141,9 +231,9 @@ struct HomeView: View {
         .padding(.horizontal, 40)
     }
     
-    // MARK: - Loyalty Banner
+    // MARK: - Offers Banner
     
-    private var loyaltyBanner: some View {
+    private var offersBanner: some View {
         ZStack {
             // Background
             RoundedRectangle(cornerRadius: 18)
@@ -170,31 +260,36 @@ struct HomeView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
-                        Image(systemName: "crown.fill")
+                        Image(systemName: "tag.fill")
                             .font(.system(size: 16))
                             .foregroundStyle(AppColors.gold)
                         
-                        Text("LUXE REWARDS")
+                        Text("ACTIVE OFFERS")
                             .font(.caption)
                             .fontWeight(.bold)
                             .tracking(2)
                             .foregroundStyle(AppColors.gold)
                     }
                     
-                    Text("Earn Points with\nEvery Purchase")
+                    Text("Unlock exclusive\ndiscounts at checkout")
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundStyle(AppColors.pureWhite)
                         .lineSpacing(4)
                     
-                    GoldButton(title: "JOIN NOW", isCompact: true) {
-                        navManager.navigateToProfile()
+                    GoldButton(title: "SHOW OFFERS", isCompact: true) {
+                        Task {
+                            if let offers = try? await SyncManager.shared.fetchActiveOffers() {
+                                await MainActor.run { activeOffers = offers }
+                            }
+                        }
+                        showOffersSheet = true
                     }
                 }
                 
                 Spacer()
                 
-                Image(systemName: "star.circle.fill")
+                Image(systemName: "percent")
                     .font(.system(size: 50))
                     .foregroundStyle(AppColors.gold.opacity(0.2))
             }
@@ -262,5 +357,5 @@ struct HomeView: View {
 
 #Preview {
     HomeView()
-        .preferredColorScheme(.dark)
+        .withLuxePreviewEnvironment()
 }

@@ -12,12 +12,16 @@ struct ProductDetailView: View {
     
     @Environment(CartManager.self) private var cartManager
     @Environment(WishlistManager.self) private var wishlistManager
+    @Environment(UserManager.self) private var userManager
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedVariant: String? = nil
     @State private var currentImageIndex: Int = 0
     @State private var showAddedToCart: Bool = false
     @State private var isDescriptionExpanded: Bool = false
+    @State private var showARTryOn: Bool = false
+    @State private var showShareSheet: Bool = false
+
     
     private var variants: [String] {
         MockData.variants(for: product)
@@ -56,15 +60,13 @@ struct ProductDetailView: View {
                         // Description
                         descriptionSection
                         
-                        // Authenticity certificate
-                        AuthenticityView()
-                            .padding(.horizontal, -20)
+
                         
                         // Delivery info
                         deliveryInfo
                         
                         // Bottom spacing for action buttons
-                        Color.clear.frame(height: 120)
+                        Color.clear.frame(height: product.category == "Watches" || product.category == "Fashion" ? 160 : 100)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 20)
@@ -95,7 +97,7 @@ struct ProductDetailView: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
-                    Button(action: { wishlistManager.toggle(product) }) {
+                    Button(action: { wishlistManager.toggle(product, userId: userManager.supabaseUserId) }) {
                         Image(systemName: wishlistManager.isWishlisted(product) ? "heart.fill" : "heart")
                             .font(.system(size: 16))
                             .foregroundStyle(AppColors.gold)
@@ -104,7 +106,7 @@ struct ProductDetailView: View {
                             .clipShape(Circle())
                     }
                     
-                    Button(action: {}) {
+                    Button(action: { showShareSheet = true }) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 14))
                             .foregroundStyle(AppColors.pureWhite)
@@ -121,6 +123,13 @@ struct ProductDetailView: View {
                 selectedVariant = first
             }
         }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(items: [
+                "Check out \(product.name) by \(product.brand) on DIOR! \(product.price.formattedPrice)",
+                URL(string: "https://dior.com")!
+            ])
+            .presentationDetents([.medium])
+        }
     }
     
     // MARK: - Image Gallery
@@ -130,18 +139,14 @@ struct ProductDetailView: View {
             TabView(selection: $currentImageIndex) {
                 ForEach(0..<3, id: \.self) { index in
                     ZStack {
-                        Image(product.imageName)
-                            .resizable()
-                            .scaledToFill()
+                        AsyncProductImage(product: product, contentMode: .fill)
                             .frame(maxWidth: .infinity)
                             .frame(height: 400)
                             .clipped()
                         
-                        // Subtle gradient overlay for readability on light images
                         LinearGradient(
-                            colors: [.clear, .black.opacity(0.3)],
-                            startPoint: .top,
-                            endPoint: .bottom
+                            colors: [.clear, .black.opacity(0.35)],
+                            startPoint: .top, endPoint: .bottom
                         )
                     }
                     .tag(index)
@@ -150,15 +155,11 @@ struct ProductDetailView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 400)
             
-            // Custom page indicators
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { index in
                     Capsule()
                         .fill(index == currentImageIndex ? AppColors.gold : AppColors.grayDark)
-                        .frame(
-                            width: index == currentImageIndex ? 20 : 6,
-                            height: 4
-                        )
+                        .frame(width: index == currentImageIndex ? 20 : 6, height: 4)
                         .animation(.easeInOut(duration: 0.3), value: currentImageIndex)
                 }
             }
@@ -366,40 +367,68 @@ struct ProductDetailView: View {
     // MARK: - Bottom Buttons
     
     private var bottomButtons: some View {
-        HStack(spacing: 12) {
-            // Add to Cart
-            Button(action: { addToCart() }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "cart.badge.plus")
-                        .font(.system(size: 16))
-                    Text("ADD TO CART")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .tracking(1)
-                }
-                .foregroundStyle(AppColors.gold)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .overlay(
-                    Capsule()
-                        .stroke(AppColors.gold, lineWidth: 1.5)
-                )
-            }
-            .buttonStyle(PressButtonStyle())
-            
-            // Buy Now
-            Button(action: { buyNow() }) {
-                Text("BUY NOW")
-                    .font(.subheadline)
-                    .fontWeight(.bold)
-                    .tracking(2)
+        VStack(spacing: 12) {
+            // Try On Button (AR Feature) - Only for Watches and Fashion
+            if product.category == "Watches" || product.category == "Fashion" {
+                Button(action: { showARTryOn = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arkit")
+                            .font(.system(size: 16))
+                        Text("TRY ON")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .tracking(1)
+                    }
                     .foregroundStyle(AppColors.background)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(LinearGradient.goldSubtle)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [AppColors.gold, AppColors.gold.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .clipShape(Capsule())
+                }
+                .buttonStyle(PressButtonStyle())
             }
-            .buttonStyle(PressButtonStyle())
+            
+            HStack(spacing: 12) {
+                // Add to Cart
+                Button(action: { addToCart() }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "cart.badge.plus")
+                            .font(.system(size: 16))
+                        Text("ADD TO CART")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .tracking(1)
+                    }
+                    .foregroundStyle(AppColors.gold)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .overlay(
+                        Capsule()
+                            .stroke(AppColors.gold, lineWidth: 1.5)
+                    )
+                }
+                .buttonStyle(PressButtonStyle())
+                
+                // Buy Now
+                Button(action: { buyNow() }) {
+                    Text("BUY NOW")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .tracking(2)
+                        .foregroundStyle(AppColors.background)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(LinearGradient.goldSubtle)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(PressButtonStyle())
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 14)
@@ -410,6 +439,9 @@ struct ProductDetailView: View {
         )
         .fullScreenCover(isPresented: $showCheckout) {
             CheckoutView()
+        }
+        .fullScreenCover(isPresented: $showARTryOn) {
+            ARTryOnView(product: product)
         }
     }
     
@@ -442,7 +474,7 @@ struct ProductDetailView: View {
     @State private var showCheckout = false
     
     private func addToCart() {
-        cartManager.addToCart(product: product, variant: selectedVariant)
+        cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
         withAnimation(.spring(response: 0.4)) {
             showAddedToCart = true
         }
@@ -454,7 +486,7 @@ struct ProductDetailView: View {
     
     private func buyNow() {
         // Add to cart if not already there, then show checkout
-        cartManager.addToCart(product: product, variant: selectedVariant)
+        cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
         showCheckout = true
     }
 }
@@ -463,6 +495,5 @@ struct ProductDetailView: View {
     NavigationStack {
         ProductDetailView(product: MockData.products[0])
     }
-    .environment(CartManager())
-    .environment(WishlistManager())
+    .withLuxePreviewEnvironment()
 }

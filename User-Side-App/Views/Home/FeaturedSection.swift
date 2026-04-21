@@ -45,5 +45,5 @@ struct FeaturedSection: View {
             products: MockData.newArrivals
         )
     }
-    .environment(WishlistManager())
+    .withLuxePreviewEnvironment()
 }

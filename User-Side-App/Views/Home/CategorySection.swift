@@ -2,29 +2,49 @@
 //  CategorySection.swift
 //  User-Side-App
 //
-//  Horizontal category browsing section for LUXE Home tab
+//  Horizontal category browsing — iOS-standard scroll with subtle peek hint
 //
 
 import SwiftUI
 
 struct CategorySection: View {
     let categories: [Category]
-    @Environment(NavigationManager.self) private var navManager
+    let products: [Product]
+    @State private var selectedCategory: Category? = nil
+    @State private var showAllProducts = false
     
     var body: some View {
-        VStack(spacing: 16) {
-            SectionHeader(title: "Shop by Category")
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Shop by Category") {
+                showAllProducts = true
+            }
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     ForEach(categories) { category in
                         CategoryCard(category: category) {
-                            navManager.navigateToShop(withCategory: category.name)
+                            selectedCategory = category
                         }
                     }
                 }
                 .padding(.horizontal, 20)
+                .padding(.vertical, 4) // breathing room for shadow/scale
             }
+        }
+        .sheet(item: $selectedCategory) { category in
+            SeeAllProductsView(
+                title: category.name,
+                products: products.filter { 
+                    $0.category.localizedCaseInsensitiveContains(category.name) ||
+                    category.name.localizedCaseInsensitiveContains($0.category)
+                }
+            )
+        }
+        .sheet(isPresented: $showAllProducts) {
+            SeeAllProductsView(
+                title: "All Categories",
+                products: products
+            )
         }
     }
 }
@@ -32,6 +52,7 @@ struct CategorySection: View {
 #Preview {
     ZStack {
         AppColors.background.ignoresSafeArea()
-        CategorySection(categories: MockData.categories)
+        CategorySection(categories: MockData.categories, products: MockData.products)
     }
+    .withLuxePreviewEnvironment()
 }

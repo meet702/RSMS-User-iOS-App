@@ -1,0 +1,295 @@
+//
+//  OrdersManager.swift
+//  User-Side-App
+//
+//  App-level observable store for all orders placed in LUXE.
+//  Shared via environment so ProfileView, OrdersView, and
+//  OrderSuccessView all see the same live data.
+//
+
+import SwiftUI
+import Supabase
+
+@Observable
+class OrdersManager {
+    
+    // Remote synced orders
+    var orders: [Order] = []
+    var isLoading: Bool = false
+    
+    // MARK: - Remote Sync
+    
+    func loadOrders(userId: UUID) async {
+        isLoading = true
+        print("🔄 Loading orders for user \(userId)")
+        isLoading = true
+        do {
+            let dtos = try await SyncManager.shared.fetchOrders(userId: userId)
+            self.orders = dtos.map { dto in
+            // DEBUG: Log each fetched order number
+            print("✅ Fetched order: \(dto.order_number) with status \(dto.status)")
+                // Map DTO items to OrderItem
+                let orderItems = (dto.customer_order_items ?? []).map { itemDto in
+                    // Create a snapshot product from the DTO data
+                    let snapshotProduct = Product(
+                        id: itemDto.product_id,
+                        name: itemDto.product_name,
+                        brand: "DIOR", // Can be expanded to store brand in DB if needed
+                        price: itemDto.price_at_purchase,
+                        originalPrice: nil,
+                        imageName: "",
+                        imageURL: itemDto.product_image_url,
+                        category: "Luxury",
+                        isNew: false,
+                        rating: 5.0,
+                        isFeatured: false,
+                        description: ""
+                    )
+                    
+                    return OrderItem(
+                        id: itemDto.id,
+                        product: snapshotProduct,
+                        variant: itemDto.variant,
+                        quantity: itemDto.quantity,
+                        priceAtPurchase: itemDto.price_at_purchase
+                    )
+                }
+                
+                // Handle high-precision Supabase dates
+                let formatter = ISO8601DateFormatter()
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                
+                let creationDate = formatter.date(from: dto.created_at ?? "") ?? 
+                                   ISO8601DateFormatter().date(from: dto.created_at ?? "") ?? Date()
+                
+                let currentStatus = OrderStatus.from(string: dto.status)
+                
+                var generatedSteps: [TrackingStep] = [
+                    TrackingStep(status: .placed, date: creationDate, title: "Order Confirmed", description: "Your order has been placed successfully.", isCompleted: true)
+                ]
+                
+                if currentStatus != .placed && currentStatus != .cancelled {
+                    generatedSteps.append(
+                        TrackingStep(status: .processing, date: Calendar.current.date(byAdding: .hour, value: 2, to: creationDate), title: "Processing", description: "Our artisan team is preparing your order.", isCompleted: currentStatus == .processing || currentStatus == .dispatched || currentStatus == .outForDelivery || currentStatus == .delivered)
+                    )
+                }
+                
+                if currentStatus == .dispatched || currentStatus == .outForDelivery || currentStatus == .delivered {
+                    generatedSteps.append(
+                        TrackingStep(status: .dispatched, date: Calendar.current.date(byAdding: .day, value: 1, to: creationDate), title: "Dispatched", description: "Your order has left our boutique.", isCompleted: true)
+                    )
+                }
+                
+                if currentStatus == .outForDelivery || currentStatus == .delivered {
+                    generatedSteps.append(
+                        TrackingStep(status: .outForDelivery, date: Calendar.current.date(byAdding: .day, value: 2, to: creationDate), title: "Out for Delivery", description: "Your concierge is en route.", isCompleted: true)
+                    )
+                }
+                
+                if currentStatus == .delivered {
+                    generatedSteps.append(
+                        TrackingStep(status: .delivered, date: Calendar.current.date(byAdding: .day, value: 3, to: creationDate), title: "Delivered", description: "Your package has been securely delivered.", isCompleted: true)
+                    )
+                }
+                
+                // Map DTO to Order
+                return Order(
+                    id: dto.id,
+                    orderNumber: dto.order_number,
+                    date: creationDate,
+                    items: orderItems,
+                    subtotal: dto.subtotal,
+                    taxes: dto.taxes,
+                    deliveryFee: dto.delivery_fee,
+                    status: currentStatus,
+                    trackingSteps: generatedSteps,
+                    estimatedDelivery: formatter.date(from: dto.estimated_delivery ?? "") ?? 
+                                       ISO8601DateFormatter().date(from: dto.estimated_delivery ?? "")
+                )
+            }
+        } catch {
+            print("Failed to load orders: \(error)")
+        }
+        isLoading = false
+        print("✅ Finished loading orders – total: \(orders.count)")
+    }
+    
+    // MARK: - Computed stats
+    
+    var totalOrders: Int {
+        orders.count
+    }
+    
+    var totalSpend: Double {
+        orders
+            .filter { $0.status != .cancelled }
+            .reduce(0) { $0 + $1.finalTotal }
+    }
+    
+    // MARK: - Filtered lists
+    
+    var activeOrders: [Order] {
+        orders.filter { $0.status.isActive }.sorted { $0.date > $1.date }
+    }
+    
+    var pastOrders: [Order] {
+        orders.filter { !$0.status.isActive }.sorted { $0.date > $1.date }
+    }
+    
+    // MARK: - Place Order
+    
+    func placeOrder(from cartItems: [CartItem], 
+                    userId: UUID, 
+                    redeemedPoints: Int = 0, 
+                    offerDiscount: Double = 0.0,
+                    shippingAddress: String, 
+                    paymentMethod: String) async throws {
+        print("🛒 Placing order for user \(userId) with \(cartItems.count) items")
+        guard !cartItems.isEmpty else { return }
+        
+        let subtotal = cartItems.reduce(0) { $0 + $1.totalPrice }
+        let discount = Double(redeemedPoints) + offerDiscount // 1 point = 1 INR + Offer discount
+        let taxes    = max(0.0, (subtotal - discount)) * 0.18
+        let deliveryFee = subtotal >= 50_000 ? 0.0 : 500.0
+        let orderNumber = generateOrderNumber()
+        
+        // Disable points earning per user request
+        let earnedPoints = 0
+        
+        // Calculate ETA (e.g., 4 days from now)
+        let etaDate = Calendar.current.date(byAdding: .day, value: 4, to: Date()) ?? Date()
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let etaString = formatter.string(from: etaDate)
+        
+        // Prepare Order DTO
+        let orderInsert = OrderInsertDTO(
+            user_id: userId,
+            order_number: orderNumber,
+            status: "Order Placed",
+            subtotal: subtotal,
+            taxes: taxes,
+            delivery_fee: deliveryFee,
+            shipping_address: shippingAddress,
+            payment_method: paymentMethod,
+            estimated_delivery: etaString,
+            points_earned: earnedPoints,
+            points_redeemed: redeemedPoints,
+            discount_amount: discount
+        )
+        
+        // Prepare Item DTOs
+        let itemInserts = cartItems.map { item in
+            OrderItemInsertDTO(
+                order_id: UUID(), // Placeholder, SyncManager replaces this
+                product_id: item.product.id,
+                variant: item.variant,
+                quantity: item.quantity,
+                price_at_purchase: item.product.price,
+                product_name: item.product.name,
+                product_image_url: item.product.imageURL
+            )
+        }
+        
+        // Sync to Supabase with RETRY LOGIC for network errors
+        var attempts = 0
+        let maxAttempts = 3
+        var lastError: Error?
+        
+        while attempts < maxAttempts {
+            attempts += 1
+            do {
+                try await SyncManager.shared.processCheckout(
+                    order: orderInsert,
+                    items: itemInserts,
+                    pointsEarned: earnedPoints,
+                    pointsRedeemed: redeemedPoints
+                )
+                print("✅ Order RPC succeeded on attempt \(attempts)")
+                lastError = nil
+                break
+            } catch {
+                lastError = error
+                print("⚠️ Order attempt \(attempts) failed: \(error)")
+                
+                // Only retry if it's a network error (like "connection lost")
+                let nsError = error as NSError
+                if nsError.domain == NSURLErrorDomain {
+                    print("🔄 Retrying due to network error...")
+                    try? await Task.sleep(for: .seconds(Double(attempts) * 1.5)) // Exponential backoff
+                    continue
+                } else {
+                    // Database error or other logic error - don't retry, just throw
+                    throw error
+                }
+            }
+        }
+        
+        if let error = lastError {
+            throw error
+        }
+        
+        // Reload local list
+        await loadOrders(userId: userId)
+        print("🔄 Reloaded orders after placement")
+    }
+    
+    // MARK: - Cancel
+    
+    func cancelOrder(_ orderID: UUID) async {
+        guard let index = orders.firstIndex(where: { $0.id == orderID }) else { return }
+        
+        // Optimistic UI update
+        withAnimation {
+            orders[index].status = .cancelled
+        }
+        
+        // Push update to backend
+        do {
+            try await SyncManager.shared.cancelOrder(orderId: orderID)
+            print("✅ Successfully cancelled order in database")
+            
+            // Reload from source to ensure everything is perfectly synced
+            if let userId = orders.first?.items.first?.product.id { // Fallback, will reload based on logged in user anyway
+                // Actually better to use the reliable userId from OrdersManager if we had it, 
+                // but loadOrders usually takes it as an argument.
+            }
+        } catch {
+            print("❌ Failed to cancel order in database: \(error)")
+        }
+    }
+    
+    // MARK: - Razorpay Integration
+    
+    struct RazorpayOrderResponse: Codable {
+        let order_id: String
+    }
+    
+    func fetchRazorpayOrderID(amount: Double) async throws -> String {
+        // Round to 2 decimal places just in case, though the Edge Function does it too
+        let roundedAmount = (amount * 100).rounded() / 100
+        
+        let body: [String: Double] = [
+            "amount": roundedAmount
+        ]
+        
+        print("💳 Invoking create-razorpay-order for amount: \(roundedAmount)")
+        
+        // Call Supabase Edge Function and decode response directly
+        // Restoring 'options' based syntax for compatibility with the project's library version
+        let response: RazorpayOrderResponse = try await SupabaseManager.shared.client.functions.invoke(
+            "create-razorpay-order",
+            options: .init(body: body)
+        )
+        
+        return response.order_id
+    }
+    
+    // MARK: - Helpers
+    
+    private func generateOrderNumber() -> String {
+        let random1 = Int.random(in: 1000...9999)
+        let random2 = Int.random(in: 100...999)
+        return "DIOR-\(random1)-\(random2)"
+    }
+}

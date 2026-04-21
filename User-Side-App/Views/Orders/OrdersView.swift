@@ -8,11 +8,22 @@
 import SwiftUI
 
 struct OrdersView: View {
-    @State private var viewModel = OrdersViewModel()
+    @Environment(OrdersManager.self) private var ordersManager
+    @Environment(UserManager.self) private var userManager
     
+    @State private var selectedTab: OrderTab = .active
+    
+    enum OrderTab: String, CaseIterable {
+        case active = "My Orders"
+        case past = "Past Orders"
+    }
+
+    private var currentOrders: [Order] {
+        selectedTab == .active ? ordersManager.activeOrders : ordersManager.pastOrders
+    }
+
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        VStack(spacing: 0) {
                 // Segmented Control
                 segmentedPicker
                     .padding(.horizontal, 20)
@@ -21,11 +32,13 @@ struct OrdersView: View {
                 
                 // List of Orders
                 ScrollView(.vertical, showsIndicators: false) {
-                    if viewModel.currentOrders.isEmpty {
+                    if currentOrders.isEmpty && ordersManager.isLoading {
+                        loadingState
+                    } else if currentOrders.isEmpty {
                         emptyState
                     } else {
                         LazyVStack(spacing: 16) {
-                            ForEach(viewModel.currentOrders) { order in
+                            ForEach(currentOrders) { order in
                                 NavigationLink(value: order) {
                                     OrderCardView(order: order)
                                 }
@@ -38,6 +51,16 @@ struct OrdersView: View {
                     }
                 }
                 .background(AppColors.background)
+                .refreshable {
+                    if let userId = userManager.supabaseUserId {
+                        await ordersManager.loadOrders(userId: userId)
+                    }
+                }
+            }
+            .task {
+                if let userId = userManager.supabaseUserId {
+                    await ordersManager.loadOrders(userId: userId)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -51,31 +74,34 @@ struct OrdersView: View {
             }
             .navigationDestination(for: Order.self) { order in
                 OrderTrackingView(order: order) {
-                    viewModel.cancelOrder(order.id)
+                    await ordersManager.cancelOrder(order.id)
+                    // Auto-switch to past tab to show the cancelled order landing
+                    withAnimation(.easeInOut) {
+                        selectedTab = .past
+                    }
                 }
             }
         }
-    }
     
     // MARK: - Segmented Picker
     
     private var segmentedPicker: some View {
         HStack(spacing: 0) {
-            ForEach(OrdersViewModel.OrderTab.allCases, id: \.self) { tab in
+            ForEach(OrderTab.allCases, id: \.self) { tab in
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        viewModel.selectedTab = tab
+                        selectedTab = tab
                     }
                 }) {
                     Text(tab.rawValue)
                         .font(.subheadline)
-                        .fontWeight(viewModel.selectedTab == tab ? .bold : .medium)
-                        .foregroundStyle(viewModel.selectedTab == tab ? AppColors.pureWhite : AppColors.grayLight)
+                        .fontWeight(selectedTab == tab ? .bold : .medium)
+                        .foregroundStyle(selectedTab == tab ? AppColors.pureWhite : AppColors.grayLight)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(
                             ZStack {
-                                if viewModel.selectedTab == tab {
+                                if selectedTab == tab {
                                     Capsule()
                                         .fill(AppColors.surfaceDark)
                                         .overlay(Capsule().stroke(AppColors.gold.opacity(0.3), lineWidth: 1))
@@ -98,8 +124,23 @@ struct OrdersView: View {
         .clipShape(Capsule())
     }
     
-    // MARK: - Empty State
+    // MARK: - States
     
+    private var loadingState: some View {
+        VStack {
+            Spacer().frame(height: 100)
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(AppColors.gold)
+                .scaleEffect(1.5)
+            Text("Fetching your orders...")
+                .font(.caption)
+                .foregroundStyle(AppColors.grayLight)
+                .padding(.top, 16)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private var emptyState: some View {
         VStack(spacing: 20) {
             Spacer().frame(height: 80)
@@ -119,12 +160,12 @@ struct OrdersView: View {
             }
             
             VStack(spacing: 8) {
-                Text("No \(viewModel.selectedTab.rawValue)")
+                Text("No \(selectedTab.rawValue)")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
                 
-                Text(viewModel.selectedTab == .active
+                Text(selectedTab == .active
                      ? "You don't have any active orders right now.\nStart shopping to place an order!"
                      : "You haven't made any purchases yet.")
                     .font(.subheadline)
@@ -133,22 +174,14 @@ struct OrdersView: View {
                     .lineSpacing(4)
             }
             
-            if viewModel.selectedTab == .active {
-                // Return to shopping (Navigation routing would go back to home or shop tab)
-                Button(action: {
-                    // In a fully integrated app layout, you could inject selectedTab via environment
-                    // and switch to .shop Tab. 
-                }) {
-                    Text("START SHOPPING")
+            if selectedTab == .active {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Browse the Shop tab to place an order")
                         .font(.caption)
-                        .fontWeight(.bold)
-                        .tracking(1)
-                        .foregroundStyle(AppColors.gold)
-                        .padding(.vertical, 14)
-                        .padding(.horizontal, 24)
-                        .overlay(Capsule().stroke(AppColors.gold, lineWidth: 1))
                 }
-                .buttonStyle(PressButtonStyle())
+                .foregroundStyle(AppColors.gold.opacity(0.6))
                 .padding(.top, 16)
             }
         }
@@ -159,5 +192,5 @@ struct OrdersView: View {
 
 #Preview {
     OrdersView()
-        .preferredColorScheme(.dark)
+        .withLuxePreviewEnvironment()
 }

@@ -40,6 +40,9 @@ struct ShopView: View {
                 }
                 .padding(.top, 8)
             }
+            .refreshable {
+                await viewModel.loadData()
+            }
             .background(AppColors.background)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -84,6 +87,12 @@ struct ShopView: View {
                     viewModel.selectedCategory = pending
                 }
                 navManager.pendingCategoryFilter = nil
+            }
+            if let search = navManager.pendingSearchText {
+                withAnimation {
+                    viewModel.searchText = search
+                }
+                navManager.pendingSearchText = nil
             }
         }
     }
@@ -269,6 +278,5 @@ struct ShopView: View {
 
 #Preview {
     ShopView()
-        .environment(WishlistManager())
-        .environment(CartManager())
+        .withLuxePreviewEnvironment()
 }
