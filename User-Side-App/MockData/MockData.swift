@@ -196,12 +196,11 @@ enum MockData {
             subtotal: products[0].price,
             taxes: products[0].price * 0.18,
             deliveryFee: 0,
-            status: .processing,
+            status: .placed,
             trackingSteps: [
                 TrackingStep(status: .placed,     date: Date().addingTimeInterval(-86400 * 2),   title: "Order Placed",  description: "Your order has been received.",           isCompleted: true),
-                TrackingStep(status: .processing, date: Date().addingTimeInterval(-86400 * 1.5), title: "Processing",    description: "We are preparing your item for dispatch.", isCompleted: true),
-                TrackingStep(status: .dispatched, date: nil,                                     title: "Dispatched",    description: "Your item is on the way.",                isCompleted: false),
-                TrackingStep(status: .delivered,  date: nil,                                     title: "Delivered",     description: "Estimated delivery.",                     isCompleted: false)
+                TrackingStep(status: .shipped, date: nil,                                     title: "Shipped",       description: "Your order has left our boutique.",                isCompleted: false),
+                TrackingStep(status: .delivered,  date: nil,                                     title: "Delivered",     description: "Your package has been securely delivered.",                     isCompleted: false)
             ],
             estimatedDelivery: Date().addingTimeInterval(86400 * 3)
         ),
@@ -219,9 +218,8 @@ enum MockData {
             status: .delivered,
             trackingSteps: [
                 TrackingStep(status: .placed,     date: Date().addingTimeInterval(-86400 * 15),   title: "Order Placed", description: "Your order has been received.",       isCompleted: true),
-                TrackingStep(status: .processing, date: Date().addingTimeInterval(-86400 * 14.5), title: "Processing",   description: "Item prepared for dispatch.",         isCompleted: true),
-                TrackingStep(status: .dispatched, date: Date().addingTimeInterval(-86400 * 14),   title: "Dispatched",   description: "Item handed to courier partner.",     isCompleted: true),
-                TrackingStep(status: .delivered,  date: Date().addingTimeInterval(-86400 * 12),   title: "Delivered",    description: "Delivered securely to your address.", isCompleted: true)
+                TrackingStep(status: .shipped, date: Date().addingTimeInterval(-86400 * 14),   title: "Shipped",      description: "Your order has left our boutique.",     isCompleted: true),
+                TrackingStep(status: .delivered,  date: Date().addingTimeInterval(-86400 * 12),   title: "Delivered",    description: "Your package has been securely delivered.", isCompleted: true)
             ],
             estimatedDelivery: Date().addingTimeInterval(-86400 * 12)
         ),
