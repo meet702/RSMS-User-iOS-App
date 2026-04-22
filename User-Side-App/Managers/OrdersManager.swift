@@ -17,9 +17,14 @@ class OrdersManager {
     var orders: [Order] = []
     var isLoading: Bool = false
     
+    private var channel: RealtimeChannelV2?
+    private var listeningTask: Task<Void, Never>?
+    
     // MARK: - Remote Sync
     
     func loadOrders(userId: UUID) async {
+        startListening(userId: userId)
+        
         isLoading = true
         print("🔄 Loading orders for user \(userId)")
         isLoading = true
@@ -65,30 +70,35 @@ class OrdersManager {
                 let currentStatus = OrderStatus.from(string: dto.status)
                 
                 var generatedSteps: [TrackingStep] = [
-                    TrackingStep(status: .placed, date: creationDate, title: "Order Confirmed", description: "Your order has been placed successfully.", isCompleted: true)
+                    TrackingStep(status: .placed, date: creationDate, title: "Order Placed", description: "Your order has been placed successfully.", isCompleted: true)
                 ]
                 
-                if currentStatus != .placed && currentStatus != .cancelled {
+                if currentStatus == .cancelled {
                     generatedSteps.append(
-                        TrackingStep(status: .processing, date: Calendar.current.date(byAdding: .hour, value: 2, to: creationDate), title: "Processing", description: "Our artisan team is preparing your order.", isCompleted: currentStatus == .processing || currentStatus == .dispatched || currentStatus == .outForDelivery || currentStatus == .delivered)
+                        TrackingStep(status: .cancelled, date: Calendar.current.date(byAdding: .hour, value: 1, to: creationDate), title: "Order Cancelled", description: "Your order was cancelled.", isCompleted: true)
                     )
-                }
-                
-                if currentStatus == .dispatched || currentStatus == .outForDelivery || currentStatus == .delivered {
+                } else {
+                    let isShipped = currentStatus == .shipped || currentStatus == .delivered
+                    let isDelivered = currentStatus == .delivered
+                    
                     generatedSteps.append(
-                        TrackingStep(status: .dispatched, date: Calendar.current.date(byAdding: .day, value: 1, to: creationDate), title: "Dispatched", description: "Your order has left our boutique.", isCompleted: true)
+                        TrackingStep(
+                            status: .shipped, 
+                            date: isShipped ? Calendar.current.date(byAdding: .day, value: 1, to: creationDate) : nil, 
+                            title: "Shipped", 
+                            description: "Your order has left our boutique.", 
+                            isCompleted: isShipped
+                        )
                     )
-                }
-                
-                if currentStatus == .outForDelivery || currentStatus == .delivered {
+                    
                     generatedSteps.append(
-                        TrackingStep(status: .outForDelivery, date: Calendar.current.date(byAdding: .day, value: 2, to: creationDate), title: "Out for Delivery", description: "Your concierge is en route.", isCompleted: true)
-                    )
-                }
-                
-                if currentStatus == .delivered {
-                    generatedSteps.append(
-                        TrackingStep(status: .delivered, date: Calendar.current.date(byAdding: .day, value: 3, to: creationDate), title: "Delivered", description: "Your package has been securely delivered.", isCompleted: true)
+                        TrackingStep(
+                            status: .delivered, 
+                            date: isDelivered ? Calendar.current.date(byAdding: .day, value: 3, to: creationDate) : nil, 
+                            title: "Delivered", 
+                            description: "Your package has been securely delivered.", 
+                            isCompleted: isDelivered
+                        )
                     )
                 }
                 
@@ -112,6 +122,30 @@ class OrdersManager {
         }
         isLoading = false
         print("✅ Finished loading orders – total: \(orders.count)")
+    }
+    
+    private func startListening(userId: UUID) {
+        guard channel == nil else { return }
+        
+        let client = SupabaseManager.shared.client
+        let newChannel = client.channel("orders_channel_\(userId.uuidString)")
+        self.channel = newChannel
+        
+        let updates = newChannel.postgresChange(
+            UpdateAction.self,
+            schema: "public",
+            table: "customer_orders",
+            filter: "user_id=eq.\(userId.uuidString)"
+        )
+        
+        listeningTask = Task {
+            await newChannel.subscribe()
+            
+            for await _ in updates {
+                print("⚡️ Realtime update: customer_orders changed. Reloading...")
+                await self.loadOrders(userId: userId)
+            }
+        }
     }
     
     // MARK: - Computed stats
@@ -143,7 +177,8 @@ class OrdersManager {
                     redeemedPoints: Int = 0, 
                     offerDiscount: Double = 0.0,
                     shippingAddress: String, 
-                    paymentMethod: String) async throws {
+                    paymentMethod: String,
+                    storeId: UUID) async throws {
         print("🛒 Placing order for user \(userId) with \(cartItems.count) items")
         guard !cartItems.isEmpty else { return }
         
@@ -203,7 +238,8 @@ class OrdersManager {
                     order: orderInsert,
                     items: itemInserts,
                     pointsEarned: earnedPoints,
-                    pointsRedeemed: redeemedPoints
+                    pointsRedeemed: redeemedPoints,
+                    storeId: storeId
                 )
                 print("✅ Order RPC succeeded on attempt \(attempts)")
                 lastError = nil

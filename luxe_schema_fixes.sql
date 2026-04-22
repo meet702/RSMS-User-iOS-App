@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION public.complete_luxe_order(
   p_order_payload JSONB,
   p_points_earned INT,
   p_points_redeemed INT,
-  p_user_id UUID
+  p_user_id UUID,
+  p_store_id UUID
 ) RETURNS VOID AS $$
 DECLARE
   v_order_id UUID;
@@ -40,11 +41,12 @@ BEGIN
     estimated_delivery,
     points_earned,
     points_redeemed,
-    discount_amount
+    discount_amount,
+    store_id
   ) VALUES (
     p_user_id,
     v_order_num,
-    p_order_payload->>'status',
+    'placed',
     (p_order_payload->>'subtotal')::numeric,
     (p_order_payload->>'taxes')::numeric,
     (p_order_payload->>'delivery_fee')::numeric,
@@ -53,7 +55,8 @@ BEGIN
     NULLIF(p_order_payload->>'estimated_delivery', '')::timestamptz,
     p_points_earned,
     p_points_redeemed,
-    (p_order_payload->>'discount_amount')::numeric
+    (p_order_payload->>'discount_amount')::numeric,
+    p_store_id
   ) RETURNING id INTO v_order_id;
 
   -- C. Insert Individual Items into customer_order_items
@@ -174,3 +177,11 @@ ON CONFLICT DO NOTHING;
 
 -- Reload cache again to see everything fresh
 NOTIFY pgrst, 'reload schema';
+
+-- 7. Enforce strictly 3 statuses for customer_orders
+ALTER TABLE public.customer_orders 
+DROP CONSTRAINT IF EXISTS customer_orders_status_check;
+
+ALTER TABLE public.customer_orders
+ADD CONSTRAINT customer_orders_status_check 
+CHECK (status IN ('placed', 'shipped', 'delivered'));

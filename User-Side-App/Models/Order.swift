@@ -9,14 +9,12 @@ import Foundation
 
 enum OrderStatus: String, CaseIterable, Codable, Sendable {
     case placed = "Order Placed"
-    case processing = "Processing"
-    case dispatched = "Dispatched"
-    case outForDelivery = "Out for Delivery"
+    case shipped = "Shipped"
     case delivered = "Delivered"
     case cancelled = "Cancelled"
     
     var isActive: Bool {
-        return self != .delivered && self != .cancelled
+        return self == .placed || self == .shipped
     }
     
     /// Fuzzy initializer to handle database variations
@@ -24,14 +22,8 @@ enum OrderStatus: String, CaseIterable, Codable, Sendable {
         let normalized = string.lowercased().trimmingCharacters(in: .whitespaces)
         
         switch normalized {
-        case "placed", "order placed", "order_placed", "pending":
-            return .placed
-        case "processing", "preparing":
-            return .processing
-        case "dispatched", "shipped", "on_the_way":
-            return .dispatched
-        case "out for delivery", "out_for_delivery", "near_you":
-            return .outForDelivery
+        case "shipped", "dispatched", "on_the_way":
+            return .shipped
         case "delivered", "completed", "received":
             return .delivered
         case "cancelled", "canceled", "rejected":

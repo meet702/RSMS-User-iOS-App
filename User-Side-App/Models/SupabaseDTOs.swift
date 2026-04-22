@@ -228,3 +228,11 @@ struct AppointmentDTO: Codable, Sendable {
     let notes: String?
     let status: String
 }
+
+// MARK: - Store DTO
+
+struct StoreDTO: Codable, Sendable, Identifiable, Hashable {
+    let id: UUID
+    let name: String
+    let city: String
+}

@@ -64,6 +64,18 @@ class SyncManager {
         return dtos
     }
     
+    // MARK: - Stores Management
+    
+    func fetchStores() async throws -> [StoreDTO] {
+        let dtos: [StoreDTO] = try await client
+            .from("stores")
+            .select("id, name, city")
+            .eq("isActive", value: true)
+            .execute()
+            .value
+        return dtos
+    }
+    
     // MARK: - Profile Management
     
     func fetchProfile(userId: UUID) async throws -> ProfileDTO? {
@@ -249,6 +261,7 @@ class SyncManager {
         let p_points_redeemed: Int
         let p_order_payload: OrderDict
         let p_items_payload: [ItemDict]
+        let p_store_id: UUID
         
         struct OrderDict: Encodable {
             let order_number: String
@@ -274,7 +287,7 @@ class SyncManager {
         }
     }
 
-    func processCheckout(order: OrderInsertDTO, items: [OrderItemInsertDTO], pointsEarned: Int, pointsRedeemed: Int) async throws {
+    func processCheckout(order: OrderInsertDTO, items: [OrderItemInsertDTO], pointsEarned: Int, pointsRedeemed: Int, storeId: UUID) async throws {
         // 1. Prepare typed parameters
         let orderDict = LuxeOrderParams.OrderDict(
             order_number: order.order_number,
@@ -306,7 +319,8 @@ class SyncManager {
             p_points_earned: pointsEarned,
             p_points_redeemed: pointsRedeemed,
             p_order_payload: orderDict,
-            p_items_payload: itemDicts
+            p_items_payload: itemDicts,
+            p_store_id: storeId
         )
         
         // 2. The One-Shot call via typed parameters

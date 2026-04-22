@@ -39,7 +39,7 @@ struct OrderTrackingView: View {
                 itemsSection
                 
                 // Cancel Button (if applicable)
-                if order.status == .placed || order.status == .processing {
+                if order.status == .placed {
                     cancelButton
                 }
                 

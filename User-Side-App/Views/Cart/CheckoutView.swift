@@ -22,6 +22,9 @@ struct CheckoutView: View {
     @State private var errorMessage = ""
     @State private var failedOrderItems: [CartItem] = []
     @State private var userAddresses: [AddressDTO] = []
+    @State private var availableStores: [StoreDTO] = []
+    @State private var selectedStoreId: UUID? = nil
+    @State private var showStorePicker = false
     
     // Offers
     @State private var availableOffers: [OfferDTO] = []
@@ -62,6 +65,10 @@ struct CheckoutView: View {
         userAddresses.first { $0.id == selectedAddressId }
     }
     
+    var currentStore: StoreDTO? {
+        availableStores.first { $0.id == selectedStoreId }
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -71,6 +78,10 @@ struct CheckoutView: View {
                     VStack(alignment: .leading, spacing: 32) {
                         checkoutSection(title: "SHIPPING ADDRESS") {
                             addressCard
+                        }
+                        
+                        checkoutSection(title: "BOUTIQUE FULFILLMENT") {
+                            storeCard
                         }
                         
                         checkoutSection(title: "PAYMENT METHOD") {
@@ -124,6 +135,14 @@ struct CheckoutView: View {
                 )
                 .presentationDetents([.medium])
             }
+            // Store picker sheet
+            .sheet(isPresented: $showStorePicker) {
+                StorePickerSheet(
+                    stores: availableStores,
+                    selectedId: $selectedStoreId
+                )
+                .presentationDetents([.medium])
+            }
             // Add NEW Address Entry Sheet (Map Based)
             .sheet(isPresented: $showAddressEntry) {
                 MapAddressPickerView(onSave: { structured in
@@ -153,6 +172,7 @@ struct CheckoutView: View {
             .task {
                 await loadUserAddresses()
                 await loadOffers()
+                await loadStores()
             }
         }
     }
@@ -178,6 +198,20 @@ struct CheckoutView: View {
             }
         } catch {
             print("Failed to load addresses: \(error)")
+        }
+    }
+    
+    private func loadStores() async {
+        do {
+            let fetched = try await SyncManager.shared.fetchStores()
+            await MainActor.run {
+                self.availableStores = fetched
+                if self.selectedStoreId == nil {
+                    self.selectedStoreId = fetched.first?.id
+                }
+            }
+        } catch {
+            print("Failed to load stores: \(error)")
         }
     }
     
@@ -256,6 +290,34 @@ struct CheckoutView: View {
                     }
                     Text("Standard Delivery: 3–5 Business Days")
                         .font(.caption2).foregroundStyle(AppColors.gold.opacity(0.8)).padding(.top, 2)
+                }
+                
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.gold)
+            }
+            .padding(16).darkCard(goldBorder: true)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private var storeCard: some View {
+        Button(action: { showStorePicker = true }) {
+            HStack(spacing: 16) {
+                Image(systemName: "building.2.fill").font(.title2).foregroundStyle(AppColors.gold)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    if let store = currentStore {
+                        Text(store.name)
+                            .font(.subheadline).fontWeight(.bold)
+                            .foregroundStyle(AppColors.pureWhite)
+                        Text(store.city)
+                            .font(.caption)
+                            .foregroundStyle(AppColors.grayLight)
+                    } else {
+                        Text("Select Boutique")
+                            .font(.subheadline).fontWeight(.medium)
+                            .foregroundStyle(AppColors.grayMedium)
+                    }
                 }
                 
                 Spacer()
@@ -405,7 +467,7 @@ struct CheckoutView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(PressButtonStyle())
-            .disabled(isPlacingOrder || userManager.isLoading || selectedAddressId == nil)
+            .disabled(isPlacingOrder || userManager.isLoading || selectedAddressId == nil || selectedStoreId == nil)
             .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 34)
             .background(AppColors.background.shadow(color: .black.opacity(0.4), radius: 10, y: -5))
         }
@@ -436,23 +498,28 @@ struct CheckoutView: View {
                 // 1. Create Razorpay Order via Edge Function
                 let orderId = try await ordersManager.fetchRazorpayOrderID(amount: finalTotal)
                 
-                // 2. Open Razorpay Checkout
-                RazorpayManager.shared.startPayment(
-                    orderId: orderId,
-                    amount: finalTotal,
-                    email: email,
-                    contact: "9999999999", // Should be fetched from profile
-                    onSuccess: { paymentId in
-                        self.paymentId = paymentId
-                        self.handlePaymentSuccess()
-                    },
-                    onFailure: { error in
-                        print("Razorpay failed: \(error)")
-                        self.errorMessage = error
-                        self.showError = true
-                        isPlacingOrder = false
-                    }
-                )
+                // 2. Open Razorpay Checkout (with slight delay for UI stability)
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+                
+                await MainActor.run {
+                    RazorpayManager.shared.startPayment(
+                        orderId: orderId,
+                        amount: finalTotal,
+                        email: email,
+                        contact: "9999999999", // Should be fetched from profile
+                        onSuccess: { paymentId in
+                            self.paymentId = paymentId
+                            self.handlePaymentSuccess()
+                        },
+                        onFailure: { error in
+                            print("Razorpay failed: \(error)")
+                            self.errorMessage = error
+                            self.showError = true
+                            isPlacingOrder = false
+                        }
+                    )
+                }
+
             } catch {
                 print("Failed to prepare Razorpay: \(error)")
                 
@@ -497,11 +564,11 @@ struct CheckoutView: View {
         // 3. Record the order in our database in the background
         Task {
             let addressText = currentAddress?.full_address ?? "Unknown Address"
-            await performOrderRecording(items: itemsToOrder, userId: userId, shippingAddress: addressText)
+            await performOrderRecording(items: itemsToOrder, userId: userId, shippingAddress: addressText, storeId: selectedStoreId!)
         }
     }
     
-    private func performOrderRecording(items: [CartItem], userId: UUID, shippingAddress: String) async {
+    private func performOrderRecording(items: [CartItem], userId: UUID, shippingAddress: String, storeId: UUID) async {
         isPlacingOrder = true
         do {
             try await ordersManager.placeOrder(
@@ -510,7 +577,8 @@ struct CheckoutView: View {
                 redeemedPoints: 0,
                 offerDiscount: offerDiscount,
                 shippingAddress: shippingAddress,
-                paymentMethod: selectedPayment
+                paymentMethod: selectedPayment,
+                storeId: storeId
             )
             showSuccess = true
             failedOrderItems = []
@@ -526,7 +594,7 @@ struct CheckoutView: View {
         guard let userId = userManager.supabaseUserId else { return }
         let addressText = currentAddress?.full_address ?? "Unknown Address"
         Task {
-            await performOrderRecording(items: failedOrderItems, userId: userId, shippingAddress: addressText)
+            await performOrderRecording(items: failedOrderItems, userId: userId, shippingAddress: addressText, storeId: selectedStoreId!)
         }
     }
 
@@ -545,57 +613,57 @@ struct AddressPickerSheet: View {
         NavigationStack {
             ZStack {
                 AppColors.background.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    // Saved Addresses
-                    ForEach(addresses) { address in
-                        Button(action: {
-                            selectedId = address.id
-                            dismiss()
-                        }) {
-                            HStack(spacing: 16) {
-                                Image(systemName: selectedId == address.id ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(selectedId == address.id ? AppColors.gold : AppColors.grayDark)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(address.building_name ?? "No Name")
-                                        .font(.subheadline).fontWeight(.bold)
-                                        .foregroundStyle(AppColors.pureWhite)
-                                    Text("\(address.area_street ?? ""), \(address.city)")
-                                        .font(.caption)
-                                        .foregroundStyle(AppColors.grayLight)
-                                    if let label = address.label {
-                                        Text(label.uppercased()).font(.system(size: 8, weight: .bold))
-                                            .foregroundStyle(AppColors.gold).padding(.top, 2)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        // Saved Addresses
+                        ForEach(addresses) { address in
+                            Button(action: {
+                                selectedId = address.id
+                                dismiss()
+                            }) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: selectedId == address.id ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(selectedId == address.id ? AppColors.gold : AppColors.grayDark)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(address.building_name ?? "No Name")
+                                            .font(.subheadline).fontWeight(.bold)
+                                            .foregroundStyle(AppColors.pureWhite)
+                                        Text("\(address.area_street ?? ""), \(address.city)")
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.grayLight)
+                                        if let label = address.label {
+                                            Text(label.uppercased()).font(.system(size: 8, weight: .bold))
+                                                .foregroundStyle(AppColors.gold).padding(.top, 2)
+                                        }
                                     }
+                                    Spacer()
                                 }
+                                .padding(.horizontal, 20).padding(.vertical, 18)
+                            }
+                            .buttonStyle(.plain)
+                            Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
+                        }
+                        
+                        // Add New
+                        Button(action: onAddNew) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(AppColors.gold)
+                                Text("Add New Address...")
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(AppColors.gold)
                                 Spacer()
                             }
                             .padding(.horizontal, 20).padding(.vertical, 18)
                         }
                         .buttonStyle(.plain)
-                        Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
                     }
-                    
-                    // Add New
-                    Button(action: onAddNew) {
-                        HStack(spacing: 16) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 20))
-                                .foregroundStyle(AppColors.gold)
-                            Text("Add New Address...")
-                                .font(.subheadline)
-                                .fontWeight(.bold)
-                                .foregroundStyle(AppColors.gold)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 20).padding(.vertical, 18)
-                    }
-                    .buttonStyle(.plain)
-                    
-                    Spacer()
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
             }
             .navigationTitle("SELECT ADDRESS")
             .navigationBarTitleDisplayMode(.inline)
@@ -625,31 +693,32 @@ struct SimplePickerSheet: View {
         NavigationStack {
             ZStack {
                 AppColors.background.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    ForEach(options, id: \.self) { option in
-                        Button(action: {
-                            selected = option
-                            dismiss()
-                        }) {
-                            HStack(spacing: 16) {
-                                Image(systemName: selected == option ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(selected == option ? AppColors.gold : AppColors.grayDark)
-                                Text(option).font(.subheadline).foregroundStyle(AppColors.pureWhite)
-                                    .multilineTextAlignment(.leading)
-                                Spacer()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(options, id: \.self) { option in
+                            Button(action: {
+                                selected = option
+                                dismiss()
+                            }) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: selected == option ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(selected == option ? AppColors.gold : AppColors.grayDark)
+                                    Text(option).font(.subheadline).foregroundStyle(AppColors.pureWhite)
+                                        .multilineTextAlignment(.leading)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20).padding(.vertical, 18)
                             }
-                            .padding(.horizontal, 20).padding(.vertical, 18)
-                        }
-                        .buttonStyle(.plain)
-                        
-                        if option != options.last {
-                            Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
+                            .buttonStyle(.plain)
+                            
+                            if option != options.last {
+                                Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
+                            }
                         }
                     }
-                    Spacer()
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -667,5 +736,58 @@ struct SimplePickerSheet: View {
 #Preview {
     CheckoutView()
         .withLuxePreviewEnvironment()
+}
+
+struct StorePickerSheet: View {
+    let stores: [StoreDTO]
+    @Binding var selectedId: UUID?
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppColors.background.ignoresSafeArea()
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        ForEach(stores) { store in
+                            Button(action: {
+                                selectedId = store.id
+                                dismiss()
+                            }) {
+                                HStack(spacing: 16) {
+                                    Image(systemName: selectedId == store.id ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(selectedId == store.id ? AppColors.gold : AppColors.grayDark)
+                                    
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(store.name)
+                                            .font(.subheadline).fontWeight(.bold)
+                                            .foregroundStyle(AppColors.pureWhite)
+                                        Text(store.city)
+                                            .font(.caption)
+                                            .foregroundStyle(AppColors.grayLight)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20).padding(.vertical, 18)
+                            }
+                            .buttonStyle(.plain)
+                            Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+            }
+            .navigationTitle("SELECT BOUTIQUE")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }.foregroundStyle(AppColors.gold)
+                }
+            }
+            .toolbarBackground(AppColors.surfaceDark, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+        }
+    }
 }
 

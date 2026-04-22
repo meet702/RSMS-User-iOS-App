@@ -46,6 +46,10 @@ class RazorpayManager: NSObject {
         // CRITICAL DEBUG: Print the exact options being sent
         print("DEBUG PAYMENT OPTIONS: \(options)")
         
+        if self.razorpay == nil {
+            self.razorpay = RazorpayCheckout.initWithKey(self.razorpayKey, andDelegateWithData: self)
+        }
+        
         if let topController = getTopViewController() {
             razorpay?.open(options, displayController: topController)
         }
