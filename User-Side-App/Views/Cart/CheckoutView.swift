@@ -32,11 +32,14 @@ struct CheckoutView: View {
     
     var offerDiscount: Double {
         guard let offer = selectedOffer else { return 0.0 }
-        if offer.discount_type == "percentage" {
-            let discount = cartManager.subtotal * (offer.discount_value / 100.0)
+        let discountValue = offer.discount_value ?? 0.0
+        let type = (offer.discount_type ?? "fixed").lowercased()
+        
+        if type == "percentage" {
+            let discount = cartManager.subtotal * (discountValue / 100.0)
             return min(discount, cartManager.subtotal)
         } else {
-            return min(offer.discount_value, cartManager.subtotal)
+            return min(discountValue, cartManager.subtotal)
         }
     }
     
@@ -169,10 +172,16 @@ struct CheckoutView: View {
             } message: {
                 Text(errorMessage)
             }
+            .onChange(of: selectedStoreId) {
+                Task { await loadOffers() }
+            }
             .task {
-                await loadUserAddresses()
-                await loadOffers()
-                await loadStores()
+                // Fetch in parallel to avoid one blocking another
+                async let addr: () = loadUserAddresses()
+                async let offs: () = loadOffers()
+                async let strs: () = loadStores()
+                
+                let _ = await [addr, offs, strs]
             }
         }
     }
@@ -219,12 +228,18 @@ struct CheckoutView: View {
         do {
             let offers = try await SyncManager.shared.fetchActiveOffers()
             await MainActor.run {
-                // Ensure the list is filtered to fully active within date range if needed,
-                // but relying on "status == 'active'" from remote is fine for now
-                self.availableOffers = offers
+                // Filter strictly for active status
+                self.availableOffers = offers.filter { offer in
+                    let status = (offer.status ?? "").lowercased().trimmingCharacters(in: .whitespaces)
+                    return status == "active"
+                }
+                print("🏁 CheckoutView: Loaded \(availableOffers.count) active offers")
             }
         } catch {
-            print("Failed to load offers: \(error)")
+            print("❌ Failed to load offers: \(error)")
+            await MainActor.run {
+                self.errorMessage = "Offers Error: \(error.localizedDescription)"
+            }
         }
     }
     
@@ -392,10 +407,10 @@ struct CheckoutView: View {
     }
     
     private var offersCard: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 16) {
             ForEach(availableOffers) { offer in
                 Button(action: {
-                    withAnimation {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                         if selectedOffer?.id == offer.id {
                             selectedOffer = nil // Deselect
                         } else {
@@ -403,46 +418,7 @@ struct CheckoutView: View {
                         }
                     }
                 }) {
-                    HStack(spacing: 16) {
-                        Image(systemName: selectedOffer?.id == offer.id ? "checkmark.circle.fill" : "circle")
-                            .font(.title3)
-                            .foregroundStyle(selectedOffer?.id == offer.id ? AppColors.gold : AppColors.grayDark)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(offer.name)
-                                .font(.subheadline).fontWeight(.bold)
-                                .foregroundStyle(selectedOffer?.id == offer.id ? AppColors.gold : AppColors.pureWhite)
-                            
-                            if let code = offer.coupon_code {
-                                Text("Code: \(code)").font(.caption2).foregroundStyle(AppColors.grayLight)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        if offer.discount_type == "percentage" {
-                            Text("\(Int(offer.discount_value))% OFF")
-                                .font(.caption).fontWeight(.bold)
-                                .foregroundStyle(AppColors.background)
-                                .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(AppColors.gold)
-                                .clipShape(Capsule())
-                        } else {
-                            Text(offer.discount_value.formattedPrice + " OFF")
-                                .font(.caption).fontWeight(.bold)
-                                .foregroundStyle(AppColors.background)
-                                .padding(.horizontal, 8).padding(.vertical, 4)
-                                .background(AppColors.gold)
-                                .clipShape(Capsule())
-                        }
-                    }
-                    .padding(12)
-                    .background(AppColors.surfaceDark)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(selectedOffer?.id == offer.id ? AppColors.gold : AppColors.grayDark.opacity(0.3), lineWidth: 1)
-                    )
+                    CouponView(offer: offer, isSelected: selectedOffer?.id == offer.id)
                 }
                 .buttonStyle(.plain)
             }

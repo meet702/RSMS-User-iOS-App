@@ -111,10 +111,13 @@ struct HomeView: View {
                                                 }
                                             }
                                             Spacer()
-                                            if offer.discount_type == "percentage" {
-                                                Text("\(Int(offer.discount_value))% OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                                            let discountValue = offer.discount_value ?? 0.0
+                                            let type = (offer.discount_type ?? "fixed").lowercased()
+                                            
+                                            if type == "percentage" {
+                                                Text("\(Int(discountValue))% OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
                                             } else {
-                                                Text("₹\(Int(offer.discount_value)) OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                                                Text("₹\(Int(discountValue)) OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
                                             }
                                         }
                                         .padding()

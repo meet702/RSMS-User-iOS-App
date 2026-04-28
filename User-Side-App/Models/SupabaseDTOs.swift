@@ -212,12 +212,16 @@ struct AddressDTO: Codable, Sendable, Identifiable {
 struct OfferDTO: Codable, Sendable, Identifiable, Hashable {
     let id: UUID
     let name: String
-    let discount_type: String
-    let discount_value: Double
-    let status: String
-    let usage_limit: Int?
-    let coupon_code: String?
+    let discount_type: String?
+    let discount_value: Double?
+    let status: String?
+    let start_date: String?
     let end_date: String?
+    let coupon_code: String?
+    let usage_limit: Int?
+    let is_paused: Bool?
+    let is_stackable: Bool?
+    let store_id: UUID?
 }
 
 // MARK: - Appointment DTO
