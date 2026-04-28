@@ -20,6 +20,8 @@ struct ProductDTO: Codable, Sendable {
     let category: String?
     let image_url: String?
     let created_at: String?
+    let review_count: Int?
+    let rating: Double?
     
     func toProduct() -> Product {
         Product(
@@ -32,7 +34,8 @@ struct ProductDTO: Codable, Sendable {
             imageURL: image_url,
             category: category ?? "Uncategorized",
             isNew: false,
-            rating: 4.5,
+            rating: rating ?? 0.0,
+            reviewCount: review_count ?? 0,
             isFeatured: false,
             description: description ?? ""
         )
@@ -239,4 +242,16 @@ struct StoreDTO: Codable, Sendable, Identifiable, Hashable {
     let id: UUID
     let name: String
     let city: String
+}
+
+// MARK: - Review DTO
+
+struct ReviewDTO: Codable, Sendable, Identifiable {
+    let id: UUID?
+    let product_id: UUID
+    let user_id: UUID
+    let user_name: String
+    let rating: Int
+    let comment: String?
+    let created_at: String?
 }

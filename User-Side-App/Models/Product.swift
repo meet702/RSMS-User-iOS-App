@@ -19,6 +19,7 @@ struct Product: Identifiable, Hashable, Sendable {
     let isNew: Bool
     let rating: Double
     let isFeatured: Bool
+    let reviewCount: Int
     let description: String
     
     init(
@@ -32,6 +33,7 @@ struct Product: Identifiable, Hashable, Sendable {
         category: String,
         isNew: Bool = false,
         rating: Double = 4.5,
+        reviewCount: Int = 0,
         isFeatured: Bool = false,
         description: String = ""
     ) {
@@ -45,6 +47,7 @@ struct Product: Identifiable, Hashable, Sendable {
         self.category = category
         self.isNew = isNew
         self.rating = rating
+        self.reviewCount = reviewCount
         self.isFeatured = isFeatured
         self.description = description
     }

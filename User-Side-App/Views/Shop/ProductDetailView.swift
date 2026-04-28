@@ -19,8 +19,18 @@ struct ProductDetailView: View {
     @State private var currentImageIndex: Int = 0
     @State private var showAddedToCart: Bool = false
     @State private var isDescriptionExpanded: Bool = false
-    @State private var showARTryOn: Bool = false
     @State private var showShareSheet: Bool = false
+    @State private var reviews: [ReviewDTO] = []
+    
+    private var dynamicRating: Double {
+        if reviews.isEmpty { return 0.0 }
+        let total = reviews.reduce(0) { $0 + $1.rating }
+        return Double(total) / Double(reviews.count)
+    }
+    
+    private var dynamicReviewCount: Int {
+        reviews.count
+    }
 
     
     private var variants: [String] {
@@ -64,6 +74,12 @@ struct ProductDetailView: View {
                         
                         // Delivery info
                         deliveryInfo
+                        
+                        // Divider
+                        thinDivider
+                        
+                        // Reviews
+                        ProductReviewsView(productId: product.id, reviews: $reviews)
                         
                         // Bottom spacing for action buttons
                         Color.clear.frame(height: product.category == "Watches" || product.category == "Fashion" ? 160 : 100)
@@ -186,18 +202,18 @@ struct ProductDetailView: View {
             HStack(spacing: 4) {
                 HStack(spacing: 2) {
                     ForEach(0..<5, id: \.self) { index in
-                        Image(systemName: index < Int(product.rating) ? "star.fill" : "star")
+                        Image(systemName: index < Int(dynamicRating) ? "star.fill" : "star")
                             .font(.system(size: 12))
                             .foregroundStyle(AppColors.gold)
                     }
                 }
                 
-                Text("\(String(format: "%.1f", product.rating))")
+                Text("\(String(format: "%.1f", dynamicRating))")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
                 
-                Text("(42 reviews)")
+                Text("(\(dynamicReviewCount) reviews)")
                     .font(.caption)
                     .foregroundStyle(AppColors.grayLight)
             }
@@ -368,31 +384,6 @@ struct ProductDetailView: View {
     
     private var bottomButtons: some View {
         VStack(spacing: 12) {
-            // Try On Button (AR Feature) - Only for Watches and Fashion
-            if product.category == "Watches" || product.category == "Fashion" {
-                Button(action: { showARTryOn = true }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arkit")
-                            .font(.system(size: 16))
-                        Text("TRY ON")
-                            .font(.subheadline)
-                            .fontWeight(.bold)
-                            .tracking(1)
-                    }
-                    .foregroundStyle(AppColors.background)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(
-                        LinearGradient(
-                            colors: [AppColors.gold, AppColors.gold.opacity(0.8)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(PressButtonStyle())
-            }
             
             HStack(spacing: 12) {
                 // Add to Cart
@@ -440,8 +431,8 @@ struct ProductDetailView: View {
         .fullScreenCover(isPresented: $showCheckout) {
             CheckoutView()
         }
-        .fullScreenCover(isPresented: $showARTryOn) {
-            ARTryOnView(product: product)
+        .task {
+            try? await loadReviews()
         }
     }
     
@@ -488,6 +479,10 @@ struct ProductDetailView: View {
         // Add to cart if not already there, then show checkout
         cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
         showCheckout = true
+    }
+    
+    private func loadReviews() async throws {
+        self.reviews = try await SyncManager.shared.fetchReviews(productId: product.id)
     }
 }
 

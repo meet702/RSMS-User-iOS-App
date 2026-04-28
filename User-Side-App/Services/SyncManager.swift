@@ -337,4 +337,24 @@ class SyncManager {
             .insert(dto)
             .execute()
     }
+
+    // MARK: - Review Operations
+    
+    func fetchReviews(productId: UUID) async throws -> [ReviewDTO] {
+        let dtos: [ReviewDTO] = try await client
+            .from("product_reviews")
+            .select()
+            .eq("product_id", value: productId)
+            .order("created_at", ascending: false)
+            .execute()
+            .value
+        return dtos
+    }
+    
+    func addReview(review: ReviewDTO) async throws {
+        try await client
+            .from("product_reviews")
+            .insert(review)
+            .execute()
+    }
 }
