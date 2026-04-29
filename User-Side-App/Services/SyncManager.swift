@@ -45,12 +45,16 @@ class SyncManager {
     }
     
     func fetchCategories() async throws -> [Category] {
-        let dtos: [CategoryDTO] = try await client
-            .from("categories")
-            .select()
-            .execute()
-            .value
-        return dtos.map { $0.toCategory() }
+        return [
+            Category(name: "Jewellery", icon: "sparkles"),
+            Category(name: "Watches", icon: "clock.fill"),
+            Category(name: "Leather Goods", icon: "bag.fill"),
+            Category(name: "Couture", icon: "tshirt.fill"),
+            Category(name: "Accessories", icon: "eyeglasses"),
+            Category(name: "Fragrance", icon: "wind"),
+            Category(name: "Eyewear", icon: "eyeglasses"),
+            Category(name: "Other", icon: "tag.fill")
+        ]
     }
     
     // MARK: - Offers Management
@@ -268,12 +272,24 @@ class SyncManager {
     }
 
     func cancelOrder(orderId: UUID) async throws {
-        struct UpdateStatus: Encodable {
-            let status: String
-        }
+        // First, delete related transactions if any
+        try? await client
+            .from("transactions")
+            .delete()
+            .eq("order_id", value: orderId)
+            .execute()
+            
+        // Delete related order items to satisfy foreign key constraints
+        try await client
+            .from("customer_order_items")
+            .delete()
+            .eq("order_id", value: orderId)
+            .execute()
+            
+        // Finally, delete the order from customer_orders table
         try await client
             .from("customer_orders")
-            .update(UpdateStatus(status: "cancelled"))
+            .delete()
             .eq("id", value: orderId)
             .execute()
     }
