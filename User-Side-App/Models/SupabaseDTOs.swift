@@ -233,6 +233,8 @@ struct OfferDTO: Codable, Sendable, Identifiable, Hashable {
 
 struct AppointmentDTO: Codable, Sendable {
     let user_id: UUID
+    let title: String?
+    let type: String
     let appointment_date: String
     let notes: String?
     let status: String

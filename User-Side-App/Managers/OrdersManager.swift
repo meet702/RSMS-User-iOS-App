@@ -111,6 +111,7 @@ class OrdersManager {
                     subtotal: dto.subtotal,
                     taxes: dto.taxes,
                     deliveryFee: dto.delivery_fee,
+                    discount: dto.discount_amount ?? 0,
                     status: currentStatus,
                     trackingSteps: generatedSteps,
                     estimatedDelivery: formatter.date(from: dto.estimated_delivery ?? "") ?? 

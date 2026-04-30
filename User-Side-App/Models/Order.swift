@@ -67,9 +67,10 @@ struct Order: Identifiable, Hashable, Sendable {
     let subtotal: Double
     let taxes: Double
     let deliveryFee: Double
+    let discount: Double
     let offer_id: UUID?
     var finalTotal: Double {
-        subtotal + taxes + deliveryFee
+        max(1.0, subtotal + taxes + deliveryFee - discount)
     }
     
     var status: OrderStatus
@@ -84,6 +85,7 @@ struct Order: Identifiable, Hashable, Sendable {
         subtotal: Double,
         taxes: Double,
         deliveryFee: Double = 0,
+        discount: Double = 0,
         status: OrderStatus,
         trackingSteps: [TrackingStep] = [],
         estimatedDelivery: Date? = nil,
@@ -96,6 +98,7 @@ struct Order: Identifiable, Hashable, Sendable {
         self.subtotal = subtotal
         self.taxes = taxes
         self.deliveryFee = deliveryFee
+        self.discount = discount
         self.status = status
         self.trackingSteps = trackingSteps
         self.estimatedDelivery = estimatedDelivery

@@ -376,52 +376,46 @@ class SyncManager {
     
     func bookAppointment(dto: AppointmentDTO, profile: ProfileDTO? = nil) async throws {
         // 1. Standard Write (for Customer's "My Appointments")
-        try await client
-            .from("customer_appointments")
-            .insert(dto)
-            .execute()
-            
-        // 2. VIP Cross-Sync (for Staff App "VIP & Events" Tab)
-        if let profile = profile, let storeId = dto.store_id {
-            try? await syncToVIPSystem(dto: dto, profile: profile, storeId: storeId)
-        }
-    }
-    
-    /// Ensures the customer is in the VIP Guest directory and creates a VIP Appointment entry.
-    private func syncToVIPSystem(dto: AppointmentDTO, profile: ProfileDTO, storeId: UUID) async throws {
-        print("📡 Syncing to VIP System: User=\(profile.id), Store=\(storeId)")
-        
-        // A. Ensure guest exists in vip_guests directory
-        struct VIPGuestInsert: Encodable {
-            let id: UUID
-            let boutique_id: UUID
-            let full_name: String
-            let email: String?
-            let phone: String?
-            let preferences: String?
+        // We use a specific map here to avoid sending new fields (title/type) 
+        // to the legacy customer_appointments table which might not have them.
+        struct LegacyAppointmentInsert: Encodable {
+            let user_id: UUID
+            let appointment_date: String
+            let notes: String?
+            let status: String
+            let store_id: UUID?
         }
         
-        let guestData = VIPGuestInsert(
-            id: profile.id,
-            boutique_id: storeId,
-            full_name: "\(profile.first_name) \(profile.last_name)",
-            email: profile.email,
-            phone: profile.phone,
-            preferences: dto.notes
+        let customerData = LegacyAppointmentInsert(
+            user_id: dto.user_id,
+            appointment_date: dto.appointment_date,
+            notes: dto.notes,
+            status: dto.status,
+            store_id: dto.store_id
         )
         
         do {
             try await client
-                .from("vip_guests")
-                .upsert(guestData, onConflict: "id") // Explicitly use ID for conflict resolution
+                .from("customer_appointments")
+                .insert(customerData)
                 .execute()
-            print("✅ VIP Guest synced")
+            print("✅ Standard Appointment created")
         } catch {
-            print("⚠️ VIP Guest sync failed: \(error.localizedDescription)")
-            // Continue even if guest sync fails, as they might already exist
+            print("⚠️ Standard Appointment failed (likely missing columns): \(error.localizedDescription)")
+            // We continue anyway so the VIP sync can still happen
         }
             
-        // B. Create the VIP Appointment entry
+        // 2. VIP Cross-Sync (for Staff App "VIP & Events" Tab)
+        if let profile = profile, let storeId = dto.store_id {
+            try await syncToVIPSystem(dto: dto, profile: profile, storeId: storeId)
+        }
+    }
+    
+    /// Creates a VIP Appointment entry for the Staff App.
+    private func syncToVIPSystem(dto: AppointmentDTO, profile: ProfileDTO, storeId: UUID) async throws {
+        print("📡 Syncing to VIP System: User=\(profile.id), Store=\(storeId)")
+        
+        // Create the VIP Appointment entry
         struct VIPAppointmentInsert: Encodable {
             let guest_id: UUID
             let boutique_id: UUID
@@ -435,9 +429,9 @@ class SyncManager {
         let apptData = VIPAppointmentInsert(
             guest_id: profile.id,
             boutique_id: storeId,
-            title: "Boutique Visit",
+            title: dto.title ?? "Boutique Visit",
             appointment_date: dto.appointment_date,
-            type: "In-Store Styling",
+            type: dto.type,
             status: "scheduled",
             notes: dto.notes
         )
@@ -450,7 +444,7 @@ class SyncManager {
             print("✅ VIP Appointment synced")
         } catch {
             print("❌ VIP Appointment sync failed: \(error.localizedDescription)")
-            throw error // Throwing here will let us see the error in the UI
+            throw error
         }
     }
 

@@ -11,6 +11,7 @@ struct OrderTrackingView: View {
     let order: Order
     let onCancel: () async throws -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(UserManager.self) private var userManager
     
     @State private var showCancelPrompt = false
     @State private var errorAlertMessage: String?
@@ -39,6 +40,9 @@ struct OrderTrackingView: View {
                 
                 // Items
                 itemsSection
+                
+                // Download Invoice
+                downloadInvoiceButton
                 
                 // Cancel Button (if applicable)
                 if order.status == .placed {
@@ -301,6 +305,16 @@ struct OrderTrackingView: View {
                     Text(order.subtotal.formattedPrice)
                         .foregroundStyle(AppColors.pureWhite)
                 }
+                
+                if order.discount > 0 {
+                    HStack {
+                        Text("Discount")
+                            .foregroundStyle(AppColors.gold)
+                        Spacer()
+                        Text("-\(order.discount.formattedPrice)")
+                            .foregroundStyle(AppColors.gold)
+                    }
+                }
                 HStack {
                     Text("Taxes (18%)")
                         .foregroundStyle(AppColors.grayLight)
@@ -335,6 +349,35 @@ struct OrderTrackingView: View {
         .darkCard()
     }
     
+    private var downloadInvoiceButton: some View {
+        Button(action: {
+            if let url = InvoicePDFGenerator.generateInvoice(for: order, userName: userManager.currentUser?.fullName ?? "Valued Customer") {
+                let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootVC = windowScene.windows.first?.rootViewController {
+                    rootVC.present(activityVC, animated: true, completion: nil)
+                }
+            }
+        }) {
+            HStack(spacing: 12) {
+                Image(systemName: "doc.text.fill")
+                    .font(.system(size: 16))
+                Text("DOWNLOAD INVOICE")
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .tracking(2)
+            }
+            .foregroundStyle(AppColors.gold)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(AppColors.surfaceDark)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(AppColors.gold.opacity(0.3), lineWidth: 1))
+        }
+        .buttonStyle(PressButtonStyle())
+        .padding(.top, 8)
+    }
+
     private var cancelButton: some View {
         Button(action: { showCancelPrompt = true }) {
             Text("CANCEL ORDER")

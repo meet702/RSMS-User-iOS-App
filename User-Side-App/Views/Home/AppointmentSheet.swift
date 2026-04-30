@@ -12,6 +12,8 @@ struct AppointmentSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedDate = Date()
+    @State private var appointmentType: String = "In-Store Styling"
+    @State private var appointmentTitle: String = ""
     @State private var note = ""
     @State private var isBooked = false
     @State private var isLoading = false
@@ -21,6 +23,13 @@ struct AppointmentSheet: View {
     @State private var availableStores: [StoreDTO] = []
     @State private var selectedStoreId: UUID? = nil
     @State private var showStorePicker = false
+    
+    private let appointmentTypes = [
+        "In-Store Styling",
+        "Virtual Consultation",
+        "Repair/Service",
+        "Collection Preview"
+    ]
     
     private var selectedStore: StoreDTO? {
         availableStores.first(where: { $0.id == selectedStoreId })
@@ -119,6 +128,47 @@ struct AppointmentSheet: View {
                         .padding(10)
                         .background(AppColors.surfaceDark)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                
+                // Type Selection
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("TYPE")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .tracking(2)
+                        .foregroundStyle(AppColors.grayMedium)
+                    
+                    Picker("Appointment Type", selection: $appointmentType) {
+                        ForEach(appointmentTypes, id: \.self) { type in
+                            Text(type).tag(type)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(AppColors.pureWhite)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(AppColors.surfaceDark)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                
+                // Title (Optional)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("TITLE (OPTIONAL)")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .tracking(2)
+                        .foregroundStyle(AppColors.grayMedium)
+                    
+                    TextField("e.g., Summer Collection fitting", text: $appointmentTitle)
+                        .font(.subheadline)
+                        .foregroundStyle(AppColors.pureWhite)
+                        .padding(16)
+                        .background(AppColors.surfaceDark)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
+                        )
                 }
                 
                 // Notes
@@ -244,6 +294,8 @@ struct AppointmentSheet: View {
             // Build DTO
             let dto = AppointmentDTO(
                 user_id: userId,
+                title: appointmentTitle.isEmpty ? nil : appointmentTitle,
+                type: appointmentType,
                 appointment_date: dateString,
                 notes: note.isEmpty ? nil : note,
                 status: "pending",
