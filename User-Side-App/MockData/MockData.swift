@@ -1,17 +1,14 @@
-//
 //  MockData.swift
 //  User-Side-App
-//
-//  7 curated DIOR products — one from each key category.
+//  7 curated DIOR products  one from each key category.
 //  imageURL points to stable Pexels CDN images (no API key needed).
-//
 
 import Foundation
 
 enum MockData {
-    
+
     // MARK: - Categories
-    
+
     static let categories: [Category] = [
         Category(name: "Watches",     icon: "applewatch",          imageURL: "https://images.pexels.com/photos/1257733/pexels-photo-1257733.jpeg?auto=compress&cs=tinysrgb&w=150", productCount: 42),
         Category(name: "Jewelry",     icon: "sparkles",             imageURL: "https://images.pexels.com/photos/1458867/pexels-photo-1458867.jpeg?auto=compress&cs=tinysrgb&w=150", productCount: 38),
@@ -21,15 +18,15 @@ enum MockData {
         Category(name: "Fragrances",  icon: "drop.fill",            imageURL: "https://images.pexels.com/photos/1556704/pexels-photo-1556704.jpeg?auto=compress&cs=tinysrgb&w=150", productCount: 21),
         Category(name: "Accessories", icon: "sunglasses",           imageURL: "https://images.pexels.com/photos/1362558/pexels-photo-1362558.jpeg?auto=compress&cs=tinysrgb&w=150", productCount: 47),
     ]
-    
-    // MARK: - Products  (7 items — one from each category)
+
+    // MARK: - Products  (7 items  one from each category)
     // All imageURLs are free Pexels CDN images, no auth required.
-    
+
     static let products: [Product] = [
-        
+
         // 1. WATCHES
         Product(
-            name: "Grand Bal Plissé Soleil",
+            name: "Grand Bal Pliss Soleil",
             brand: "DIOR",
             price: 1_250_000,
             originalPrice: 1_450_000,
@@ -39,9 +36,9 @@ enum MockData {
             isNew: true,
             rating: 4.9,
             isFeatured: true,
-            description: "The Grand Bal Plissé Soleil automatic watch features a mesmerizing oscillating weight inspired by Dior Haute Couture. Crafted in steel and gold with a mother-of-pearl dial, this 36mm masterpiece embodies the art of movement."
+            description: "The Grand Bal Pliss Soleil automatic watch features a mesmerizing oscillating weight inspired by Dior Haute Couture. Crafted in steel and gold with a mother-of-pearl dial, this 36mm masterpiece embodies the art of movement."
         ),
-        
+
         // 2. JEWELRY
         Product(
             name: "Rose des Vents Bracelet",
@@ -55,7 +52,7 @@ enum MockData {
             isFeatured: true,
             description: "The Rose des Vents bracelet, a Victoire de Castellane creation, features the Maison's lucky star set in 18K yellow gold with turquoise and a diamond. A contemporary talisman inspired by Christian Dior's love of the stars."
         ),
-        
+
         // 3. FASHION
         Product(
             name: "Oblique Jacquard Jacket",
@@ -70,7 +67,7 @@ enum MockData {
             isFeatured: true,
             description: "This iconic Dior Oblique jacquard jacket features the signature monogram motif reimagined by Kim Jones. Crafted from technical cotton blend with a relaxed silhouette. A modern wardrobe essential from the Maison."
         ),
-        
+
         // 4. HANDBAGS
         Product(
             name: "Lady Dior",
@@ -82,9 +79,9 @@ enum MockData {
             isNew: false,
             rating: 5.0,
             isFeatured: true,
-            description: "The Lady Dior — an icon since 1995, beloved by Princess Diana. Crafted in supple cannage lambskin with gold-tone D.I.O.R. charms. The quilted motif is inspired by the Napoleon III chairs Christian Dior loved."
+            description: "The Lady Dior  an icon since 1995, beloved by Princess Diana. Crafted in supple cannage lambskin with gold-tone D.I.O.R. charms. The quilted motif is inspired by the Napoleon III chairs Christian Dior loved."
         ),
-        
+
         // 5. SHOES
         Product(
             name: "B23 High-Top Sneakers",
@@ -98,7 +95,7 @@ enum MockData {
             isFeatured: true,
             description: "The B23 high-top sneaker features the Dior Oblique motif on transparent technical canvas. With a white rubber sole and calfskin details, it's a contemporary icon that bridges streetwear and haute couture."
         ),
-        
+
         // 6. FRAGRANCES
         Product(
             name: "Sauvage Elixir",
@@ -110,9 +107,9 @@ enum MockData {
             category: "Fragrances",
             rating: 4.6,
             isFeatured: false,
-            description: "Sauvage Elixir is the most concentrated expression of the iconic Sauvage line. A rich elixir of spices, woods, and amber notes by François Demachy. A fragrance of raw, noble elegance for the modern man."
+            description: "Sauvage Elixir is the most concentrated expression of the iconic Sauvage line. A rich elixir of spices, woods, and amber notes by Franois Demachy. A fragrance of raw, noble elegance for the modern man."
         ),
-        
+
         // 7. ACCESSORIES
         Product(
             name: "DiorBlackSuit Sunglasses",
@@ -127,23 +124,23 @@ enum MockData {
             description: "The DiorBlackSuit navigator sunglasses feature the CD Diamond signature on the temples. Crafted in lightweight metal with grey gradient lenses. A refined silhouette embodying Dior's timeless Parisian elegance."
         ),
     ]
-    
+
     // MARK: - Filtered Collections
-    
+
     static var featuredProducts: [Product] {
         products.filter { $0.isFeatured }
     }
-    
+
     static var newArrivals: [Product] {
         products.filter { $0.isNew }
     }
-    
+
     static var recommendations: [Product] {
         Array(products.shuffled())
     }
-    
+
     // MARK: - Promotional Banners
-    
+
     static let banners: [PromoBanner] = [
         PromoBanner(
             title: "Signature Collection",
@@ -170,9 +167,9 @@ enum MockData {
             gradientAngle: 90
         ),
     ]
-    
+
     // MARK: - Product Variants
-    
+
     static func variants(for product: Product) -> [String] {
         switch product.category {
         case "Watches":     return ["36mm", "38mm", "40mm", "42mm"]
@@ -185,9 +182,9 @@ enum MockData {
         default:            return ["Standard"]
         }
     }
-    
+
     // MARK: - Mock Orders
-    
+
     static let orders: [Order] = [
         // Active Order
         Order(

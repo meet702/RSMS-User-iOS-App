@@ -1,20 +1,17 @@
-//
 //  ProductDetailView.swift
 //  User-Side-App
-//
-//  LUXE Product detail page — images, info, variants, authenticity, buy
-//
+//  LUXE Product detail page  images, info, variants, authenticity, buy
 
 import SwiftUI
 
 struct ProductDetailView: View {
     let product: Product
-    
+
     @Environment(CartManager.self) private var cartManager
     @Environment(WishlistManager.self) private var wishlistManager
     @Environment(UserManager.self) private var userManager
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var selectedVariant: String? = nil
     @State private var currentImageIndex: Int = 0
     @State private var showAddedToCart: Bool = false
@@ -22,28 +19,27 @@ struct ProductDetailView: View {
     @State private var showShareSheet: Bool = false
     @State private var reviews: [ReviewDTO] = []
     @State private var quantity: Int = 1
-    
+
     private var dynamicRating: Double {
         if reviews.isEmpty { return 0.0 }
         let total = reviews.reduce(0) { $0 + $1.rating }
         return Double(total) / Double(reviews.count)
     }
-    
+
     private var dynamicReviewCount: Int {
         reviews.count
     }
 
-    
     private var variants: [String] {
         MockData.variants(for: product)
     }
-    
+
     private let imageGradients: [(Color, Color)] = [
         (AppColors.surfaceGold, AppColors.surfaceDark),
         (AppColors.surfaceDark, AppColors.surfaceGold),
         (Color(hex: "0D0D08"), AppColors.surfaceDark),
     ]
-    
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // Scrollable content
@@ -51,43 +47,41 @@ struct ProductDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     // Image Gallery
                     imageGallery
-                    
+
                     VStack(alignment: .leading, spacing: 20) {
                         // Brand & Name
                         productInfo
-                        
+
                         // Price
                         priceSection
-                        
+
                         // Divider
                         thinDivider
-                        
+
                         // Variant selector
                         variantSelector
-                        
+
                         // Divider
                         thinDivider
-                        
+
                         // Quantity
                         quantitySelector
-                        
+
                         // Divider
                         thinDivider
-                        
+
                         // Description
                         descriptionSection
-                        
 
-                        
                         // Delivery info
                         deliveryInfo
-                        
+
                         // Divider
                         thinDivider
-                        
+
                         // Reviews
                         ProductReviewsView(productId: product.id, reviews: $reviews)
-                        
+
                         // Bottom spacing for action buttons
                         Color.clear.frame(height: product.category == "Watches" || product.category == "Fashion" ? 160 : 100)
                     }
@@ -95,11 +89,10 @@ struct ProductDetailView: View {
                     .padding(.top, 20)
                 }
             }
-            
+
             // Bottom action buttons
             bottomButtons
-            
-            // Added to cart toast
+
             if showAddedToCart {
                 addedToCartToast
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -130,7 +123,7 @@ struct ProductDetailView: View {
                             .clipShape(Circle())
                     }
                     .accessibilityLabel(wishlistManager.isWishlisted(product) ? "Remove from wishlist" : "Add to wishlist")
-                    
+
                     Button(action: { showShareSheet = true }) {
                         Image(systemName: "square.and.arrow.up")
                             .font(.system(size: 14))
@@ -157,9 +150,9 @@ struct ProductDetailView: View {
             .presentationDetents([.medium])
         }
     }
-    
+
     // MARK: - Image Gallery
-    
+
     private var imageGallery: some View {
         ZStack(alignment: .bottom) {
             TabView(selection: $currentImageIndex) {
@@ -169,7 +162,7 @@ struct ProductDetailView: View {
                             .frame(maxWidth: .infinity)
                             .frame(height: 400)
                             .clipped()
-                        
+
                         LinearGradient(
                             colors: [.clear, .black.opacity(0.35)],
                             startPoint: .top, endPoint: .bottom
@@ -181,7 +174,7 @@ struct ProductDetailView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .frame(height: 400)
-            
+
             HStack(spacing: 6) {
                 ForEach(0..<3, id: \.self) { index in
                     Capsule()
@@ -194,9 +187,9 @@ struct ProductDetailView: View {
             .accessibilityHidden(true)
         }
     }
-    
+
     // MARK: - Product Info
-    
+
     private var productInfo: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(product.brand)
@@ -204,12 +197,12 @@ struct ProductDetailView: View {
                 .fontWeight(.semibold)
                 .tracking(3)
                 .foregroundStyle(AppColors.gold)
-            
+
             Text(LocalizedStringKey(product.name))
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(AppColors.pureWhite)
-            
+
             // Rating
             HStack(spacing: 4) {
                 HStack(spacing: 2) {
@@ -219,12 +212,12 @@ struct ProductDetailView: View {
                             .foregroundStyle(AppColors.gold)
                     }
                 }
-                
+
                 Text("\(String(format: "%.1f", dynamicRating))")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
-                
+
                 Text("(\(dynamicReviewCount) reviews)")
                     .font(.caption)
                     .foregroundStyle(AppColors.grayLight)
@@ -233,23 +226,23 @@ struct ProductDetailView: View {
             .accessibilityLabel("Rating: \(String(format: "%.1f", dynamicRating)) out of 5 stars, based on \(dynamicReviewCount) reviews")
         }
     }
-    
+
     // MARK: - Price
-    
+
     private var priceSection: some View {
         HStack(alignment: .bottom, spacing: 10) {
             Text(product.price.formattedPrice)
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundStyle(AppColors.gold)
-            
+
             if let original = product.originalPrice {
                 Text(original.formattedPrice)
                     .font(.subheadline)
                     .foregroundStyle(AppColors.grayLight)
                     .strikethrough(color: AppColors.grayLight)
             }
-            
+
             if let pct = product.discountPercentage {
                 Text("\(pct)% OFF")
                     .font(.caption)
@@ -262,9 +255,9 @@ struct ProductDetailView: View {
             }
         }
     }
-    
+
     // MARK: - Variant Selector
-    
+
     private var variantSelector: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -272,16 +265,16 @@ struct ProductDetailView: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
-                
+
                 Spacer()
-                
+
                 if let variant = selectedVariant {
                     Text(variant)
                         .font(.caption)
                         .foregroundStyle(AppColors.gold)
                 }
             }
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(variants, id: \.self) { variant in
@@ -321,22 +314,22 @@ struct ProductDetailView: View {
             }
         }
     }
-    
+
     // MARK: - Description
-    
+
     private var descriptionSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Description")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
-            
+
             Text(LocalizedStringKey(product.description))
                 .font(.subheadline)
                 .foregroundStyle(AppColors.grayLight)
                 .lineSpacing(4)
                 .lineLimit(isDescriptionExpanded ? nil : 3)
-            
+
             if product.description.count > 100 {
                 Button(action: {
                     withAnimation { isDescriptionExpanded.toggle() }
@@ -349,9 +342,9 @@ struct ProductDetailView: View {
             }
         }
     }
-    
+
     // MARK: - Delivery Info
-    
+
     private var deliveryInfo: some View {
         VStack(spacing: 12) {
             deliveryRow(icon: "gift", title: "Premium Packaging", subtitle: "Luxury gift-ready packaging included")
@@ -364,14 +357,14 @@ struct ProductDetailView: View {
                 .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
         )
     }
-    
+
     private func deliveryRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16))
                 .foregroundStyle(AppColors.gold.opacity(0.7))
                 .frame(width: 28)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.caption)
@@ -381,22 +374,22 @@ struct ProductDetailView: View {
                     .font(.caption2)
                     .foregroundStyle(AppColors.grayLight)
             }
-            
+
             Spacer()
         }
     }
-    
+
     // MARK: - Quantity Selector
-    
+
     private var quantitySelector: some View {
         HStack {
             Text("Quantity")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
-            
+
             Spacer()
-            
+
             HStack(spacing: 20) {
                 Button(action: { if quantity > 1 { quantity -= 1 } }) {
                     Image(systemName: "minus")
@@ -407,13 +400,13 @@ struct ProductDetailView: View {
                         .clipShape(Circle())
                 }
                 .accessibilityLabel("Decrease quantity")
-                
+
                 Text("\(quantity)")
                     .font(.headline)
                     .foregroundStyle(AppColors.pureWhite)
                     .frame(minWidth: 30)
                     .accessibilityLabel("Quantity: \(quantity)")
-                
+
                 Button(action: { quantity += 1 }) {
                     Image(systemName: "plus")
                         .font(.system(size: 14, weight: .bold))
@@ -433,20 +426,20 @@ struct ProductDetailView: View {
             )
         }
     }
-    
+
     // MARK: - Thin Divider
-    
+
     private var thinDivider: some View {
         Rectangle()
             .fill(AppColors.grayDark.opacity(0.3))
             .frame(height: 0.5)
     }
-    
+
     // MARK: - Bottom Buttons
-    
+
     private var bottomButtons: some View {
         VStack(spacing: 12) {
-            
+
             HStack(spacing: 12) {
                 // Add to Cart
                 Button(action: { addToCart() }) {
@@ -467,7 +460,7 @@ struct ProductDetailView: View {
                     )
                 }
                 .buttonStyle(PressButtonStyle())
-                
+
                 // Buy Now
                 Button(action: { buyNow() }) {
                     Text("BUY NOW")
@@ -497,9 +490,9 @@ struct ProductDetailView: View {
             try? await loadReviews()
         }
     }
-    
+
     // MARK: - Toast
-    
+
     private var addedToCartToast: some View {
         VStack {
             HStack(spacing: 8) {
@@ -521,16 +514,16 @@ struct ProductDetailView: View {
             .onAppear {
                 AccessibilityNotification.Announcement("Added to Cart").post()
             }
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     // MARK: - Actions
-    
+
     @State private var directPurchaseItem: CartItem? = nil
-    
+
     private func addToCart() {
         cartManager.addToCart(product: product, variant: selectedVariant, quantity: quantity, userId: userManager.supabaseUserId)
         withAnimation(.spring(response: 0.4)) {
@@ -541,7 +534,7 @@ struct ProductDetailView: View {
             withAnimation { showAddedToCart = false }
         }
     }
-    
+
     private func buyNow() {
         let item = CartItem(
             product: product,
@@ -550,7 +543,7 @@ struct ProductDetailView: View {
         )
         directPurchaseItem = item
     }
-    
+
     private func loadReviews() async throws {
         self.reviews = try await SyncManager.shared.fetchReviews(productId: product.id)
     }

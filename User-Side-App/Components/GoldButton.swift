@@ -1,9 +1,6 @@
-//
 //  GoldButton.swift
 //  User-Side-App
-//
 //  Premium gold CTA button for LUXE
-//
 
 import SwiftUI
 
@@ -11,9 +8,9 @@ struct GoldButton: View {
     let title: String
     var isCompact: Bool = false
     var action: () -> Void = {}
-    
+
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -39,7 +36,7 @@ struct GoldButton: View {
 struct GoldOutlineButton: View {
     let title: String
     var action: () -> Void = {}
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)

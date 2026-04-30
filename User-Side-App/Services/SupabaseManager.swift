@@ -1,9 +1,6 @@
-//
 //  SupabaseManager.swift
 //  User-Side-App
-//
 //  Singleton Supabase client for the DIOR Customer App
-//
 
 import Foundation
 import Supabase
@@ -11,9 +8,9 @@ import Supabase
 @MainActor
 final class SupabaseManager {
     static let shared = SupabaseManager()
-    
+
     let client: SupabaseClient
-    
+
     private init() {
         client = SupabaseClient(
             supabaseURL: URL(string: "https://bdgwzkpteyxhlgprlmye.supabase.co")!,

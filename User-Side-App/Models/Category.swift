@@ -1,9 +1,6 @@
-//
 //  Category.swift
 //  User-Side-App
-//
-//  Category data model for LUXE — supports remote background images
-//
+//  Category data model for LUXE  supports remote background images
 
 import Foundation
 
@@ -13,7 +10,7 @@ struct Category: Identifiable, Hashable, Sendable {
     let icon: String
     let imageURL: String? // Added for background images in Category Cards
     let productCount: Int
-    
+
     init(
         id: UUID = UUID(),
         name: String,

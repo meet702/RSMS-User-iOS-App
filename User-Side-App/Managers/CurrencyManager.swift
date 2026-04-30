@@ -1,7 +1,5 @@
-//
 //  CurrencyManager.swift
 //  User-Side-App
-//
 
 import Foundation
 import Supabase
@@ -9,15 +7,15 @@ import Supabase
 @Observable
 final class CurrencyManager {
     static let shared = CurrencyManager()
-    
+
     var rates: [String: ExchangeRate] = [:]
     var currentRate: Double = 1.0
-    var currentSymbol: String = "₹"
+    var currentSymbol: String = ""
     var currentCurrencyCode: String = "INR"
     var currentLocaleId: String = "en_IN"
-    
+
     private init() {}
-    
+
     @MainActor
     func fetchRates() async {
         do {
@@ -26,29 +24,29 @@ final class CurrencyManager {
                 .select()
                 .execute()
                 .value
-            
+
             for rate in fetchedRates {
                 self.rates[rate.currency_code] = rate
             }
-            
+
             updateToLocalCurrency()
         } catch {
             print("[CurrencyManager] Error fetching exchange rates: \(error.localizedDescription)")
             // Fallback to defaults
             self.currentRate = 1.0
-            self.currentSymbol = "₹"
+            self.currentSymbol = ""
             self.currentCurrencyCode = "INR"
             self.currentLocaleId = "en_IN"
         }
     }
-    
+
     @MainActor
     func updateToLocalCurrency() {
         guard !rates.isEmpty else { return }
-        
+
         // Detect system currency code (e.g., "USD", "EUR")
         let localCurrencyCode = Locale.current.currency?.identifier ?? "USD"
-        
+
         if let rate = rates[localCurrencyCode] {
             self.currentRate = rate.rate
             self.currentSymbol = rate.symbol
@@ -68,7 +66,7 @@ final class CurrencyManager {
                 self.currentLocaleId = inr.locale_id
             }
         }
-        
+
         print("[CurrencyManager] Set active currency to \(currentCurrencyCode) (Rate: \(currentRate))")
     }
 }

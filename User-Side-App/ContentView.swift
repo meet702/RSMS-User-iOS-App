@@ -1,15 +1,12 @@
-//
 //  ContentView.swift
 //  User-Side-App
-//
 //  Created by Apple on 10/04/26.
-//
 
 import SwiftUI
 
 struct ContentView: View {
     @Environment(UserManager.self) private var userManager
-    
+
     var body: some View {
         Group {
             if userManager.isAuthenticated {

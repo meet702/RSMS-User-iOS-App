@@ -1,12 +1,9 @@
-//
 //  ARTryOnModels.swift
 //  User-Side-App
-//
-//  Models for AR Clothing Try-On feature —
+//  Models for AR Clothing Try-On feature
 //  Stores RAW normalized Vision coordinates so the overlay
 //  can use AVCaptureVideoPreviewLayer.layerPointConverted()
 //  for pixel-perfect Snapchat-style positioning.
-//
 
 import Foundation
 import Vision
@@ -24,7 +21,7 @@ struct ClothingItem: Identifiable, Hashable, Sendable {
     let overlayAnchor: BodyAnchorPoint
     let defaultScale: CGFloat
     let opacity: CGFloat
-    
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -46,13 +43,13 @@ struct ClothingItem: Identifiable, Hashable, Sendable {
         self.defaultScale = defaultScale
         self.opacity = opacity
     }
-    
+
     static func from(product: Product, imageURL: URL? = nil) -> ClothingItem {
         let category: ClothingCategory
         let defaultScale: CGFloat
         let anchor: BodyAnchorPoint
         let opacity: CGFloat
-        
+
         switch product.category {
         case "Watches":
             category = .accessory
@@ -108,7 +105,7 @@ struct ClothingItem: Identifiable, Hashable, Sendable {
             defaultScale = 0.3
             opacity = 1.0
         }
-        
+
         return ClothingItem(
             name: product.name,
             brand: product.brand,
@@ -133,7 +130,7 @@ enum ClothingCategory: String, CaseIterable, Sendable {
     case hat = "Hat"
     case glasses = "Glasses"
     case jewelry = "Jewelry"
-    
+
     var anchorPoint: BodyAnchorPoint {
         switch self {
         case .top: return .torso
@@ -165,17 +162,17 @@ struct SmoothedFloat: Sendable {
     var value: CGFloat = 0
     private let alpha: CGFloat
     private var initialized = false
-    
+
     init(initialValue: CGFloat = 0, alpha: CGFloat = 0.3) {
         self.value = initialValue
         self.alpha = alpha
     }
-    
+
     mutating func update(_ newValue: CGFloat) {
         if !initialized { value = newValue; initialized = true; return }
         value = value + alpha * (newValue - value)
     }
-    
+
     mutating func reset() { value = 0; initialized = false }
 }
 
@@ -186,29 +183,27 @@ struct SmoothedPoint: Sendable {
     private(set) var y: CGFloat = 0
     private let alpha: CGFloat
     private var initialized = false
-    
+
     init(alpha: CGFloat = 0.3) { self.alpha = alpha }
-    
+
     var point: CGPoint { CGPoint(x: x, y: y) }
-    
+
     mutating func update(_ p: CGPoint) {
         if !initialized { x = p.x; y = p.y; initialized = true; return }
         x = x + alpha * (p.x - x)
         y = y + alpha * (p.y - y)
     }
-    
+
     mutating func reset() { x = 0; y = 0; initialized = false }
 }
 
 // MARK: - Raw Vision Normalized Points
-//
 // These are stored in "capture device point" space:
-//   x ∈ [0,1] left→right in the device's natural orientation
-//   y ∈ [0,1] top→bottom
+//   x  [0,1] leftright in the device's natural orientation
+//   y  [0,1] topbottom
 // This is *exactly* the space that
 // AVCaptureVideoPreviewLayer.layerPointConverted(fromCaptureDevicePoint:)
 // expects, which is how Snapchat/Instagram map body/face points to screen pixels.
-//
 // Conversion from Vision (bottom-left origin, front camera mirrored):
 //   captureX = 1 - visionX   (flip X for front camera mirror)
 //   captureY = 1 - visionY   (flip Y since Vision origin is bottom-left)
@@ -228,7 +223,7 @@ struct NormalizedBodyPoints: Sendable {
     var neck:          CGPoint = .zero
     var leftKnee:      CGPoint = .zero
     var rightKnee:     CGPoint = .zero
-    
+
     // Smoothers
     private var _lShoulder  = SmoothedPoint(alpha: 0.35)
     private var _rShoulder  = SmoothedPoint(alpha: 0.35)
@@ -244,7 +239,7 @@ struct NormalizedBodyPoints: Sendable {
     private var _neck       = SmoothedPoint(alpha: 0.35)
     private var _lKnee      = SmoothedPoint(alpha: 0.28)
     private var _rKnee      = SmoothedPoint(alpha: 0.28)
-    
+
     /// Convert a Vision recognised point to capture-device-point space.
     /// - isMirrored: true for front camera (the preview is mirrored so we flip X)
     private func toCapture(_ p: VNRecognizedPoint, mirror: Bool) -> CGPoint {
@@ -252,14 +247,14 @@ struct NormalizedBodyPoints: Sendable {
         let cy = 1 - p.y          // Vision origin = bottom-left; capture = top-left
         return CGPoint(x: cx, y: cy)
     }
-    
+
     mutating func update(from obs: VNHumanBodyPoseObservation) {
         guard let pts = try? obs.recognizedPoints(.all) else { return }
-        
+
         // Inline each joint update independently.
         // Swift's exclusivity rules disallow taking two &inout references to the
         // same struct simultaneously (even in a nested func), so we expand manually.
-        
+
         if let p = pts[.leftShoulder],  p.confidence > 0.1 { _lShoulder.update(toCapture(p, mirror: true));  leftShoulder  = _lShoulder.point  }
         if let p = pts[.rightShoulder], p.confidence > 0.1 { _rShoulder.update(toCapture(p, mirror: true));  rightShoulder = _rShoulder.point  }
         if let p = pts[.leftHip],       p.confidence > 0.1 { _lHip.update(toCapture(p, mirror: true));       leftHip       = _lHip.point       }
@@ -275,7 +270,7 @@ struct NormalizedBodyPoints: Sendable {
         if let p = pts[.leftKnee],      p.confidence > 0.1 { _lKnee.update(toCapture(p, mirror: true));      leftKnee      = _lKnee.point      }
         if let p = pts[.rightKnee],     p.confidence > 0.1 { _rKnee.update(toCapture(p, mirror: true));      rightKnee     = _rKnee.point      }
     }
-    
+
     mutating func reset() {
         _lShoulder.reset(); _rShoulder.reset()
         _lHip.reset();      _rHip.reset()
@@ -284,7 +279,7 @@ struct NormalizedBodyPoints: Sendable {
         _lAnkle.reset();    _rAnkle.reset()
         _nose.reset();      _neck.reset()
         _lKnee.reset();     _rKnee.reset()
-        
+
         leftShoulder = .zero; rightShoulder = .zero
         leftHip = .zero;      rightHip = .zero
         leftWrist = .zero;    rightWrist = .zero
@@ -295,30 +290,30 @@ struct NormalizedBodyPoints: Sendable {
     }
 }
 
-// MARK: - Body Pose Data (used by SwiftUI layer — still holds screen-space values for the guide overlay etc.)
+// MARK: - Body Pose Data (used by SwiftUI layer  still holds screen-space values for the guide overlay etc.)
 
 struct BodyPoseData: Sendable {
     /// Raw smoothed normalized capture-device-point coordinates (0-1).
     /// Use these with layerPointConverted() for pixel-perfect positioning.
     var normalized = NormalizedBodyPoints()
-    
+
     var detected: Bool = false
     var confidence: Float = 0.0
-    
+
     // Derived shoulder width in normalized units (for sizing the overlay)
     var normalizedShoulderWidth: CGFloat = 0.3
     private var _shoulderWidth = SmoothedFloat(alpha: 0.25)
-    
+
     // Body tilt angle in radians
     var bodyAngle: CGFloat = 0
     private var _bodyAngle = SmoothedFloat(alpha: 0.30)
-    
+
     mutating func update(from observation: VNHumanBodyPoseObservation) {
         guard let recognized = try? observation.recognizedPoints(.all) else {
             detected = false
             return
         }
-        
+
         guard let lS = recognized[.leftShoulder],
               let rS = recognized[.rightShoulder],
               lS.confidence > 0.1,
@@ -326,16 +321,16 @@ struct BodyPoseData: Sendable {
             detected = false
             return
         }
-        
+
         // Update all normalized points
         normalized.update(from: observation)
-        
+
         // Shoulder width in normalized space (0-1)
         let rawWidth = abs(normalized.rightShoulder.x - normalized.leftShoulder.x)
         _shoulderWidth.update(rawWidth)
         normalizedShoulderWidth = _shoulderWidth.value
-        
-        // Body angle — from right to left shoulder in screen coords
+
+        // Body angle  from right to left shoulder in screen coords
         // (after coordinate flip, so we compute from the stored capture-device points)
         let dx = normalized.rightShoulder.x - normalized.leftShoulder.x
         let dy = normalized.rightShoulder.y - normalized.leftShoulder.y
@@ -343,7 +338,7 @@ struct BodyPoseData: Sendable {
         // We negate dy because screen y grows downward, which layerPointConverted already accounts for
         _bodyAngle.update(atan2(dy, dx))
         bodyAngle = _bodyAngle.value
-        
+
         // Compute confidence
         var total: Float = 0; var count: Float = 0
         for (_, p) in recognized where p.confidence > 0.1 {
@@ -352,7 +347,7 @@ struct BodyPoseData: Sendable {
         confidence = count > 0 ? total / count : 0
         detected = confidence > 0.3
     }
-    
+
     mutating func reset() {
         normalized.reset()
         _shoulderWidth.reset()
@@ -383,7 +378,7 @@ struct ClothingSearchResult: Identifiable, Sendable {
 enum ARTryOnState: Equatable, Sendable {
     case idle, initializing, cameraReady, searchingForBody, bodyDetected, applyingClothing
     case error(ARTryOnError)
-    
+
     static func == (lhs: ARTryOnState, rhs: ARTryOnState) -> Bool {
         switch (lhs, rhs) {
         case (.idle,.idle),(.initializing,.initializing),(.cameraReady,.cameraReady),
@@ -399,7 +394,7 @@ enum ARTryOnError: Error, Equatable, Sendable {
     case cameraNotAvailable, bodyTrackingNotSupported, permissionDenied
     case networkError, imageLoadFailed
     case sessionFailed(String)
-    
+
     var localizedDescription: String {
         switch self {
         case .cameraNotAvailable:        return "Camera is not available on this device"

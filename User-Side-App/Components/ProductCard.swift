@@ -1,9 +1,6 @@
-//
 //  ProductCard.swift
 //  User-Side-App
-//
-//  Reusable product cards — uses AsyncProductImage for web image loading
-//
+//  Reusable product cards  uses AsyncProductImage for web image loading
 
 import SwiftUI
 
@@ -14,7 +11,7 @@ struct ProductCardHorizontal: View {
     @Environment(WishlistManager.self) private var wishlistManager
     @Environment(CartManager.self) private var cartManager
     @Environment(UserManager.self) private var userManager
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
@@ -24,7 +21,7 @@ struct ProductCardHorizontal: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 160)
                         .clipped()
-                    
+
                     VStack(alignment: .leading, spacing: 6) {
                         Text(product.brand)
                             .font(.system(size: 10, weight: .semibold)).tracking(2)
@@ -47,7 +44,7 @@ struct ProductCardHorizontal: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(product.brand), \(product.name). Price: \(product.price.formattedPrice). \(product.isNew ? "New arrival" : "")")
                 .accessibilityHint("Double tap to view details")
-                
+
                 // Separate focus for wishlist
                 Button(action: { wishlistManager.toggle(product, userId: userManager.supabaseUserId) }) {
                     Image(systemName: wishlistManager.isWishlisted(product) ? "heart.fill" : "heart")
@@ -59,7 +56,7 @@ struct ProductCardHorizontal: View {
                 }
                 .padding(10)
                 .accessibilityLabel(wishlistManager.isWishlisted(product) ? "Remove from wishlist" : "Add to wishlist")
-                
+
                 if product.isNew {
                     VStack {
                         Spacer()
@@ -90,7 +87,7 @@ struct ProductCardGrid: View {
     let product: Product
     @Environment(WishlistManager.self) private var wishlistManager
     @Environment(UserManager.self) private var userManager
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
@@ -100,7 +97,7 @@ struct ProductCardGrid: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 140)
                         .clipped()
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(product.brand)
                             .font(.system(size: 9, weight: .semibold)).tracking(1.5)
@@ -129,7 +126,7 @@ struct ProductCardGrid: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("\(product.brand), \(product.name). Price: \(product.price.formattedPrice). \(Int(product.rating)) out of 5 stars.")
                 .accessibilityHint("Double tap to view details")
-                
+
                 // Action focus
                 Button(action: { wishlistManager.toggle(product, userId: userManager.supabaseUserId) }) {
                     Image(systemName: wishlistManager.isWishlisted(product) ? "heart.fill" : "heart")

@@ -1,18 +1,15 @@
-//
 //  OrdersView.swift
 //  User-Side-App
-//
-//  Main Orders Tab — displays active and past orders list with cancel logic
-//
+//  Main Orders Tab  displays active and past orders list with cancel logic
 
 import SwiftUI
 
 struct OrdersView: View {
     @Environment(OrdersManager.self) private var ordersManager
     @Environment(UserManager.self) private var userManager
-    
+
     @State private var selectedTab: OrderTab = .active
-    
+
     enum OrderTab: String, CaseIterable {
         case active = "My Orders"
         case past = "Past Orders"
@@ -29,7 +26,7 @@ struct OrdersView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
                     .background(AppColors.background)
-                
+
                 // List of Orders
                 ScrollView(.vertical, showsIndicators: false) {
                     if currentOrders.isEmpty && ordersManager.isLoading {
@@ -46,7 +43,7 @@ struct OrdersView: View {
                             }
                         }
                         .padding(.horizontal, 20)
-                        
+
                         Color.clear.frame(height: 80) // Tab bar clearance
                     }
                 }
@@ -82,9 +79,9 @@ struct OrdersView: View {
                 }
             }
         }
-    
+
     // MARK: - Segmented Picker
-    
+
     private var segmentedPicker: some View {
         HStack(spacing: 0) {
             ForEach(OrderTab.allCases, id: \.self) { tab in
@@ -105,7 +102,7 @@ struct OrdersView: View {
                                     Capsule()
                                         .fill(AppColors.surfaceDark)
                                         .overlay(Capsule().stroke(AppColors.gold.opacity(0.3), lineWidth: 1))
-                                    
+
                                     // Subtle indicator glow
                                     Capsule()
                                         .fill(AppColors.gold)
@@ -123,9 +120,9 @@ struct OrdersView: View {
         .background(AppColors.surfaceElevated.opacity(0.5))
         .clipShape(Capsule())
     }
-    
+
     // MARK: - States
-    
+
     private var loadingState: some View {
         VStack {
             Spacer().frame(height: 100)
@@ -144,27 +141,27 @@ struct OrdersView: View {
     private var emptyState: some View {
         VStack(spacing: 20) {
             Spacer().frame(height: 80)
-            
+
             ZStack {
                 Circle()
                     .fill(AppColors.surfaceDark)
                     .frame(width: 100, height: 100)
-                
+
                 Circle()
                     .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
                     .frame(width: 100, height: 100)
-                
+
                 Image(systemName: "shippingbox")
                     .font(.system(size: 40, weight: .light))
                     .foregroundStyle(AppColors.gold.opacity(0.4))
             }
-            
+
             VStack(spacing: 8) {
                 Text("No \(selectedTab.rawValue)")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
-                
+
                 Text(selectedTab == .active
                      ? "You don't have any active orders right now.\nStart shopping to place an order!"
                      : "You haven't made any purchases yet.")
@@ -173,7 +170,7 @@ struct OrdersView: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
-            
+
             if selectedTab == .active {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.down")

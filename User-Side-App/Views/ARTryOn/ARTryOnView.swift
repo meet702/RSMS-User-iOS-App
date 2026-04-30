@@ -1,12 +1,9 @@
-//
 //  ARTryOnView.swift
 //  User-Side-App
-//
 //  FaceTime-filter-style AR try-on view.
 //  ARCompositorEngine produces a composited UIImage every frame
 //  (camera + clothing + person segmentation mask) which is displayed
 //  full-screen here.  SwiftUI overlays sit on top for UI chrome.
-//
 
 import SwiftUI
 import AVFoundation
@@ -23,20 +20,18 @@ struct ARTryOnView: View {
     @State private var flashOpacity: Double = 0
     @State private var isInitialized = false
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            
-            // ── Full-screen composited output (camera + clothing + person mask) ──
+
             if let img = viewModel.displayImage {
                 CompositorDisplayView(image: img)
                     .ignoresSafeArea()
             } else {
                 loadingView
             }
-            
-            // ── SwiftUI overlays ──
+
             VStack {
                 topBar
                 Spacer()
@@ -44,12 +39,12 @@ struct ARTryOnView: View {
                 Spacer()
                 bottomControls
             }
-            
+
             if case .error(let e) = viewModel.state { errorOverlay(e) }
-            
+
             // Camera-flash effect on capture
             Color.white.opacity(flashOpacity).ignoresSafeArea().allowsHitTesting(false)
-            
+
             // Captured photo review sheet
             if viewModel.showCapturedPhoto, let photo = viewModel.capturedPhoto {
                 capturedPhotoOverlay(photo)
@@ -71,9 +66,9 @@ struct ARTryOnView: View {
             if let p = viewModel.capturedPhoto { ShareSheet(items: [p]) }
         }
     }
-    
+
     // MARK: - Subviews
-    
+
     private var loadingView: some View {
         VStack(spacing: 20) {
             ZStack {
@@ -87,7 +82,7 @@ struct ARTryOnView: View {
                 .font(.caption).fontWeight(.bold).tracking(3).foregroundStyle(AppColors.gold)
         }
     }
-    
+
     private var bodyGuide: some View {
         VStack(spacing: 14) {
             ZStack {
@@ -112,7 +107,7 @@ struct ARTryOnView: View {
         .transition(.opacity.combined(with: .scale(scale: 0.92)))
         .animation(.easeInOut(duration: 0.4), value: viewModel.isBodyDetected)
     }
-    
+
     private var topBar: some View {
         HStack {
             Button(action: { dismiss() }) {
@@ -139,7 +134,7 @@ struct ARTryOnView: View {
         }
         .padding(.horizontal, 20).padding(.top, 60)
     }
-    
+
     private var bottomControls: some View {
         VStack(spacing: 14) {
             if viewModel.isBodyDetected {
@@ -158,7 +153,7 @@ struct ARTryOnView: View {
         .padding(.bottom, 40)
         .animation(.spring(response: 0.4), value: viewModel.isBodyDetected)
     }
-    
+
     private var statusPill: some View {
         HStack(spacing: 6) {
             Circle().fill(Color.green).frame(width: 6, height: 6).modifier(PulseModifier())
@@ -168,7 +163,7 @@ struct ARTryOnView: View {
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background(.ultraThinMaterial.opacity(0.5)).clipShape(Capsule())
     }
-    
+
     private var confidencePill: some View {
         let c = viewModel.bodyConfidence
         return HStack(spacing: 4) {
@@ -180,7 +175,7 @@ struct ARTryOnView: View {
         .padding(.horizontal, 10).padding(.vertical, 5)
         .background(.ultraThinMaterial.opacity(0.5)).clipShape(Capsule())
     }
-    
+
     private func ctrlButton(icon: String, label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 5) {
@@ -190,7 +185,7 @@ struct ARTryOnView: View {
             .frame(width: 56, height: 56).background(.ultraThinMaterial.opacity(0.6)).clipShape(Circle())
         }
     }
-    
+
     private var captureBtn: some View {
         Button(action: capturePhoto) {
             ZStack {
@@ -203,7 +198,7 @@ struct ARTryOnView: View {
             }
         }
     }
-    
+
     private func errorOverlay(_ error: ARTryOnError) -> some View {
         VStack(spacing: 24) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -223,7 +218,7 @@ struct ARTryOnView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.85))
     }
-    
+
     private func capturedPhotoOverlay(_ photo: UIImage) -> some View {
         ZStack {
             Color.black.opacity(0.9).ignoresSafeArea()
@@ -245,12 +240,12 @@ struct ARTryOnView: View {
                     Color.clear.frame(width: 38, height: 38)
                 }
                 .padding(.horizontal, 20)
-                
+
                 Image(uiImage: photo).resizable().scaledToFit()
                     .clipShape(RoundedRectangle(cornerRadius: 20))
                     .shadow(color: AppColors.gold.opacity(0.3), radius: 20)
                     .padding(.horizontal, 20)
-                
+
                 HStack(spacing: 16) {
                     Button(action: { showShareSheet = true }) {
                         Label("SHARE", systemImage: "square.and.arrow.up")
@@ -275,7 +270,7 @@ struct ARTryOnView: View {
         }
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
     }
-    
+
     private func capturePhoto() {
         withAnimation(.easeOut(duration: 0.1)) { flashOpacity = 0.9 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
@@ -290,14 +285,13 @@ struct ARTryOnView: View {
 }
 
 // MARK: - Compositor Display View
-//
 // A lightweight UIViewRepresentable that wraps a UIImageView.
 // The image is updated at ~30 fps by ViewModel; UIKit handles the display
 // efficiently without triggering full SwiftUI layout passes.
 
 struct CompositorDisplayView: UIViewRepresentable {
     let image: UIImage
-    
+
     func makeUIView(context: Context) -> UIImageView {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFill
@@ -305,7 +299,7 @@ struct CompositorDisplayView: UIViewRepresentable {
         iv.backgroundColor = .black
         return iv
     }
-    
+
     func updateUIView(_ iv: UIImageView, context: Context) {
         iv.image = image
     }
@@ -318,7 +312,7 @@ struct ClothingSearchSheet: View {
     @Binding var searchQuery: String
     let onSearch: () -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -345,7 +339,7 @@ struct ClothingSearchSheet: View {
             .toolbarBackground(.visible, for: .navigationBar)
         }
     }
-    
+
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass").foregroundStyle(AppColors.gold)
@@ -366,7 +360,7 @@ struct ClothingSearchSheet: View {
         .padding(12).background(AppColors.surfaceDark)
         .clipShape(RoundedRectangle(cornerRadius: 12)).padding(.horizontal, 16)
     }
-    
+
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "tshirt").font(.system(size: 60)).foregroundStyle(AppColors.gold.opacity(0.3))
@@ -376,7 +370,7 @@ struct ClothingSearchSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity).padding(.top, 60)
     }
-    
+
     private var resultsGrid: some View {
         ScrollView {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
@@ -395,7 +389,7 @@ struct SearchResultCard: View {
     let result: ClothingSearchResult
     let onSelect: () -> Void
     @State private var loadedImage: UIImage?
-    
+
     var body: some View {
         Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 8) {

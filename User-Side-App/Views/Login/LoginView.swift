@@ -1,46 +1,43 @@
-//
 //  LoginView.swift
 //  User-Side-App
-//
-//  DIOR Login Experience — Gold-on-Black entry with Supabase Auth
-//
+//  DIOR Login Experience  Gold-on-Black entry with Supabase Auth
 
 import SwiftUI
 
 struct LoginView: View {
     @Environment(UserManager.self) private var userManager
-    
+
     @State private var email = ""
     @State private var password = ""
     @State private var animateContent = false
     @State private var showSignUp = false
-    
+
     // Sign-up fields
     @State private var signUpFirstName = ""
     @State private var signUpLastName = ""
     @State private var signUpEmail = ""
     @State private var signUpPassword = ""
-    
+
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
-            
+
             // Decorative background elements
             decorativeBackground
-            
+
             VStack(spacing: 40) {
                 Spacer()
-                
+
                 // Header / Branding
                 headerView
                     .offset(y: animateContent ? 0 : 20)
                     .opacity(animateContent ? 1 : 0)
-                
+
                 // Form
                 VStack(spacing: 20) {
                     customTextField(placeholder: "Email Address", text: $email, icon: "envelope")
                     customSecureField(placeholder: "Password", text: $password, icon: "lock")
-                    
+
                     HStack {
                         Spacer()
                         Button("Forgot Password?") {
@@ -65,7 +62,7 @@ struct LoginView: View {
                 .padding(.horizontal, 30)
                 .offset(y: animateContent ? 0 : 20)
                 .opacity(animateContent ? 1 : 0)
-                
+
                 // Error message
                 if let error = userManager.authError {
                     Text(error)
@@ -75,7 +72,7 @@ struct LoginView: View {
                         .padding(.horizontal, 30)
                         .padding(.top, -20)
                 }
-                
+
                 // Sign In Button
                 Button(action: { handleLogin() }) {
                     ZStack {
@@ -100,7 +97,7 @@ struct LoginView: View {
                 .padding(.horizontal, 30)
                 .offset(y: animateContent ? 0 : 40)
                 .opacity(animateContent ? 1 : 0)
-                
+
                 // OR Divider
                 HStack(spacing: 16) {
                     Rectangle().fill(AppColors.grayDark.opacity(0.5)).frame(height: 1)
@@ -112,7 +109,7 @@ struct LoginView: View {
                 .padding(.horizontal, 30)
                 .padding(.vertical, -12)
                 .opacity(animateContent ? 1 : 0)
-                
+
                 // Continue with Google
                 Button(action: {
                     Task { await userManager.signInWithGoogle() }
@@ -133,7 +130,7 @@ struct LoginView: View {
                                     )
                                 )
                         }
-                        
+
                         Text("Continue with Google")
                             .font(.subheadline)
                             .fontWeight(.semibold)
@@ -151,14 +148,14 @@ struct LoginView: View {
                 .disabled(userManager.isLoading)
                 .padding(.horizontal, 30)
                 .opacity(animateContent ? 1 : 0)
-                
+
                 Spacer()
-                
+
                 // Footer
                 HStack(spacing: 4) {
                     Text("Don't have an account?")
                         .foregroundStyle(AppColors.grayLight)
-                    Button("Join DIOR") { showSignUp = true }
+                    Button("Join LUXE") { showSignUp = true }
                         .fontWeight(.bold)
                         .foregroundStyle(AppColors.gold)
                 }
@@ -176,14 +173,14 @@ struct LoginView: View {
             signUpSheet
         }
     }
-    
+
     // MARK: - Sign Up Sheet
-    
+
     private var signUpSheet: some View {
         NavigationStack {
             ZStack {
                 AppColors.background.ignoresSafeArea()
-                
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 24) {
                         Text("DIOR")
@@ -191,11 +188,11 @@ struct LoginView: View {
                             .tracking(12)
                             .foregroundStyle(LinearGradient.goldSubtle)
                             .padding(.top, 20)
-                        
+
                         Text("Create your account")
                             .font(.subheadline)
                             .foregroundStyle(AppColors.grayLight)
-                        
+
                         VStack(spacing: 16) {
                             customTextField(placeholder: "First Name", text: $signUpFirstName, icon: "person")
                             customTextField(placeholder: "Last Name", text: $signUpLastName, icon: "person")
@@ -203,14 +200,14 @@ struct LoginView: View {
                             customSecureField(placeholder: "Password (min 6 chars)", text: $signUpPassword, icon: "lock")
                         }
                         .padding(.horizontal, 6)
-                        
+
                         if let error = userManager.authError {
                             Text(error)
                                 .font(.caption)
                                 .foregroundStyle(.red.opacity(0.8))
                                 .multilineTextAlignment(.center)
                         }
-                        
+
                         Button(action: { handleSignUp() }) {
                             ZStack {
                                 if userManager.isLoading {
@@ -239,35 +236,35 @@ struct LoginView: View {
                         .foregroundStyle(AppColors.grayLight)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("JOIN DIOR")
+                    Text("JOIN LUXE")
                         .font(.headline).fontWeight(.bold).tracking(4).foregroundStyle(AppColors.gold)
                 }
             }
         }
     }
-    
+
     // MARK: - Components
-    
+
     private var headerView: some View {
         VStack(spacing: 12) {
             Text("DIOR")
                 .font(.system(size: 60, weight: .ultraLight))
                 .tracking(20)
                 .foregroundStyle(LinearGradient.goldSubtle)
-            
+
             Text("MAISON DE COUTURE")
                 .font(.caption2)
                 .fontWeight(.bold)
                 .tracking(8)
                 .foregroundStyle(AppColors.grayLight)
-            
+
             Rectangle()
                 .fill(AppColors.gold.opacity(0.3))
                 .frame(width: 40, height: 1)
                 .padding(.top, 10)
         }
     }
-    
+
     private var decorativeBackground: some View {
         ZStack {
             Circle()
@@ -275,7 +272,7 @@ struct LoginView: View {
                 .frame(width: 300)
                 .blur(radius: 50)
                 .offset(x: -150, y: -200)
-            
+
             Circle()
                 .fill(AppColors.gold.opacity(0.04))
                 .frame(width: 400)
@@ -283,14 +280,14 @@ struct LoginView: View {
                 .offset(x: 180, y: 250)
         }
     }
-    
+
     private func customTextField(placeholder: String, text: Binding<String>, icon: String) -> some View {
         HStack(spacing: 15) {
             Image(systemName: icon)
                 .foregroundStyle(AppColors.gold.opacity(0.7))
                 .frame(width: 20)
-            
-            TextField("", text: text, prompt: 
+
+            TextField("", text: text, prompt:
                 Text(placeholder).foregroundStyle(AppColors.grayMedium)
             )
             .font(.subheadline)
@@ -306,14 +303,14 @@ struct LoginView: View {
                 .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
         )
     }
-    
+
     private func customSecureField(placeholder: String, text: Binding<String>, icon: String) -> some View {
         HStack(spacing: 15) {
             Image(systemName: icon)
                 .foregroundStyle(AppColors.gold.opacity(0.7))
                 .frame(width: 20)
-            
-            SecureField("", text: text, prompt: 
+
+            SecureField("", text: text, prompt:
                 Text(placeholder).foregroundStyle(AppColors.grayMedium)
             )
             .font(.subheadline)
@@ -327,15 +324,15 @@ struct LoginView: View {
                 .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
         )
     }
-    
+
     // MARK: - Actions
-    
+
     private func handleLogin() {
         Task {
             await userManager.signIn(email: email, password: password)
         }
     }
-    
+
     private func handleSignUp() {
         Task {
             await userManager.signUp(

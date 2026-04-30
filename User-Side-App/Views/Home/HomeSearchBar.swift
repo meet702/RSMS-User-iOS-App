@@ -1,9 +1,6 @@
-//
 //  HomeSearchBar.swift
 //  User-Side-App
-//
-//  Search bar for LUXE Home tab — submitting shows filtered results in a sheet
-//
+//  Search bar for LUXE Home tab  submitting shows filtered results in a sheet
 
 import SwiftUI
 
@@ -12,7 +9,7 @@ struct HomeSearchBar: View {
     let products: [Product]
     var onSubmit: (() -> Void)? = nil
     @State private var showResults = false
-    
+
     private var searchResults: [Product] {
         let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         guard !query.isEmpty else { return [] }
@@ -22,13 +19,13 @@ struct HomeSearchBar: View {
             $0.category.lowercased().contains(query)
         }
     }
-    
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AppColors.grayMedium)
-            
+
             TextField("", text: $searchText, prompt:
                 Text("Search watches, jewelry, fashion")
                     .foregroundStyle(AppColors.grayMedium)
@@ -42,7 +39,7 @@ struct HomeSearchBar: View {
                 guard !searchText.trimmingCharacters(in: .whitespaces).isEmpty else { return }
                 showResults = true
             }
-            
+
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")

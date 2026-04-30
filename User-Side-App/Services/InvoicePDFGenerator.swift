@@ -1,37 +1,34 @@
-//
 //  InvoicePDFGenerator.swift
 //  User-Side-App
-//
 //  Generates a premium Apple-style PDF invoice for orders.
-//
 
 import SwiftUI
 import PDFKit
 
 @MainActor
 struct InvoicePDFGenerator {
-    
+
     /// Generates a PDF file URL for the given order
     static func generateInvoice(for order: Order, userName: String) -> URL? {
         let renderer = ImageRenderer(content: InvoiceView(order: order, userName: userName))
-        
+
         // Use a standard A4 size or similar
         let pageWidth: CGFloat = 595.28 // A4 width in points
         let pageHeight: CGFloat = 841.89 // A4 height in points
-        
+
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("Invoice-\(order.orderNumber).pdf")
-        
+
         renderer.render { size, context in
             var box = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
-            
+
             guard let pdfContext = CGContext(tempURL as CFURL, mediaBox: &box, nil) else { return }
-            
+
             pdfContext.beginPDFPage(nil)
             context(pdfContext)
             pdfContext.endPDFPage()
             pdfContext.closePDF()
         }
-        
+
         return tempURL
     }
 }
@@ -41,7 +38,7 @@ struct InvoicePDFGenerator {
 struct InvoiceView: View {
     let order: Order
     let userName: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
             // Header
@@ -54,9 +51,9 @@ struct InvoiceView: View {
                         .font(.headline)
                         .foregroundStyle(.gray)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 4) {
                     Text("INVOICE")
                         .font(.title).fontWeight(.bold)
@@ -66,9 +63,9 @@ struct InvoiceView: View {
                         .font(.caption).foregroundStyle(.gray)
                 }
             }
-            
+
             Divider()
-            
+
             // Customer & Store Info
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -79,9 +76,9 @@ struct InvoiceView: View {
                     Text("Standard Shipping")
                         .font(.subheadline).foregroundStyle(.gray)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 8) {
                     Text("SOLD BY")
                         .font(.caption).fontWeight(.bold).foregroundStyle(.gray)
@@ -92,7 +89,7 @@ struct InvoiceView: View {
                         .multilineTextAlignment(.trailing)
                 }
             }
-            
+
             // Table Header
             HStack {
                 Text("DESCRIPTION").frame(maxWidth: .infinity, alignment: .leading)
@@ -102,9 +99,9 @@ struct InvoiceView: View {
             }
             .font(.caption).fontWeight(.bold).foregroundStyle(.gray)
             .padding(.top, 20)
-            
+
             Divider()
-            
+
             // Items
             ForEach(order.items) { item in
                 HStack(alignment: .top) {
@@ -117,23 +114,23 @@ struct InvoiceView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    
+
                     Text("\(item.quantity)")
                         .font(.subheadline)
                         .frame(width: 50, alignment: .center)
-                    
+
                     Text(item.priceAtPurchase.formattedPrice)
                         .font(.subheadline)
                         .frame(width: 100, alignment: .trailing)
-                    
+
                     Text((item.priceAtPurchase * Double(item.quantity)).formattedPrice)
                         .font(.subheadline).fontWeight(.bold)
                         .frame(width: 100, alignment: .trailing)
                 }
             }
-            
+
             Spacer()
-            
+
             // Summary
             VStack(spacing: 12) {
                 summaryRow(label: "Subtotal", value: order.subtotal.formattedPrice)
@@ -142,9 +139,9 @@ struct InvoiceView: View {
                 }
                 summaryRow(label: "Taxes (18%)", value: order.taxes.formattedPrice)
                 summaryRow(label: "Shipping", value: order.deliveryFee == 0 ? "FREE" : order.deliveryFee.formattedPrice)
-                
+
                 Divider()
-                
+
                 HStack {
                     Text("TOTAL")
                         .font(.headline).fontWeight(.bold)
@@ -156,7 +153,7 @@ struct InvoiceView: View {
             }
             .frame(maxWidth: 300)
             .frame(maxWidth: .infinity, alignment: .trailing)
-            
+
             // Footer
             VStack(spacing: 8) {
                 Text("Thank you for your purchase.")
@@ -174,7 +171,7 @@ struct InvoiceView: View {
         .background(.white)
         .preferredColorScheme(.light) // Always light for PDF
     }
-    
+
     private func summaryRow(label: String, value: String) -> some View {
         HStack {
             Text(label)

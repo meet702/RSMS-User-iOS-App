@@ -1,10 +1,7 @@
-//
 //  CheckoutView.swift
 //  User-Side-App
-//
-//  LUXE Checkout experience — Address, Payment, Summary
+//  LUXE Checkout experience  Address, Payment, Summary
 //  Address and Payment cards are now interactive pickers.
-//
 
 import SwiftUI
 import Supabase
@@ -26,35 +23,35 @@ struct CheckoutView: View {
     @State private var availableStores: [StoreDTO] = []
     @State private var selectedStoreId: UUID? = nil
     @State private var showStorePicker = false
-    
+
     @State private var regionTaxRules: [TaxRuleDTO] = []
-    
+
     // Direct Purchase Bypass
     var directPurchaseItem: CartItem? = nil
-    
+
     private var itemsToCheckout: [CartItem] {
         if let direct = directPurchaseItem {
             return [direct]
         }
         return cartManager.items
     }
-    
+
     private var subtotalToCheckout: Double {
         if let direct = directPurchaseItem {
             return direct.totalPrice
         }
         return cartManager.subtotal
     }
-    
+
     // Offers
     @State private var availableOffers: [OfferDTO] = []
     @State private var selectedOffer: OfferDTO? = nil
-    
+
     var offerDiscount: Double {
         guard let offer = selectedOffer else { return 0.0 }
         let discountValue = offer.discount_value ?? 0.0
         let type = (offer.discount_type ?? "fixed").lowercased()
-        
+
         if type == "percentage" {
             let discount = subtotalToCheckout * (discountValue / 100.0)
             return min(discount, subtotalToCheckout)
@@ -62,100 +59,100 @@ struct CheckoutView: View {
             return min(discountValue, subtotalToCheckout)
         }
     }
-    
+
     var taxableAmount: Double {
         max(0.0, subtotalToCheckout - offerDiscount)
     }
-    
+
     var gstAmount: Double {
         taxableAmount * 0.18
     }
-    
+
     var regionTaxAmount: Double {
         var total = 0.0
         let subtotal = subtotalToCheckout
         let ratio = subtotal > 0 ? (taxableAmount / subtotal) : 1.0
-        
+
         for item in itemsToCheckout {
             let cat = item.product.category.lowercased().trimmingCharacters(in: .whitespaces)
             if let rule = regionTaxRules.first(where: { ($0.category ?? "").lowercased().trimmingCharacters(in: .whitespaces) == cat }) {
                 let discountedItemPrice = item.totalPrice * ratio
                 let itemGST = discountedItemPrice * 0.18
                 let amountPlusGST = discountedItemPrice + itemGST
-                
+
                 total += amountPlusGST * rule.rate
             }
         }
         return total
     }
-    
+
     var totalTaxAmount: Double {
         gstAmount + regionTaxAmount
     }
-    
+
     var finalTotal: Double {
         let total = subtotalToCheckout + totalTaxAmount - offerDiscount
         return max(1.0, total) // Prevent Razorpay crash on <= 0 payments
     }
-    
+
     // Razorpay success handling
     @State private var paymentId: String? = nil
-    
-    // Address options — Now fetched or entered dynamically
+
+    // Address options  Now fetched or entered dynamically
     private var addresses: [String] {
         let saved = userAddresses.map { $0.full_address }
         return saved + ["Add New Address..."]
     }
-    
+
     // Simulated payment options (Simplified for Real flow)
     private let payments = ["Razorpay (UPI, Card, Wallet)", "Apple Pay"]
-    
+
     @State private var selectedAddressId: UUID? = nil
     @State private var selectedPayment = "Razorpay (UPI, Card, Wallet)"
     @State private var showAddressEntry = false
-    
+
     var currentAddress: AddressDTO? {
         userAddresses.first { $0.id == selectedAddressId }
     }
-    
+
     var currentStore: StoreDTO? {
         availableStores.first { $0.id == selectedStoreId }
     }
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 AppColors.background.ignoresSafeArea()
-                
+
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 32) {
                         checkoutSection(title: "SHIPPING ADDRESS") {
                             addressCard
                         }
-                        
+
                         checkoutSection(title: "BOUTIQUE FULFILLMENT") {
                             storeCard
                         }
-                        
+
                         checkoutSection(title: "PAYMENT METHOD") {
                             paymentCard
                         }
-                        
+
                         checkoutSection(title: "ORDER SUMMARY") {
                             orderSummaryCard
                         }
-                        
+
                         if !availableOffers.isEmpty {
                             checkoutSection(title: "AVAILABLE OFFERS") {
                                 offersCard
                             }
                         }
-                        
+
                         Color.clear.frame(height: 160)
                     }
                     .padding(20)
                 }
-                
+
                 placeOrderFooter
             }
             .navigationTitle("CHECKOUT")
@@ -233,22 +230,22 @@ struct CheckoutView: View {
                 async let offs: () = loadOffers()
                 async let strs: () = loadStores()
                 async let taxs: () = loadTaxRules()
-                
+
                 let _ = await [addr, offs, strs, taxs]
             }
         }
     }
-    
+
     // MARK: - API
-    
+
     private func loadUserAddresses() async {
         guard let userId = userManager.supabaseUserId else { return }
         do {
             let fetched = try await SyncManager.shared.fetchAddresses(userId: userId)
-            
+
             await MainActor.run {
                 self.userAddresses = fetched
-                
+
                 // If nothing selected, or current selection is gone, pick default
                 if selectedAddressId == nil || !userAddresses.contains(where: { $0.id == selectedAddressId }) {
                     if let defaultAddr = userAddresses.first(where: { $0.is_default }) {
@@ -262,7 +259,7 @@ struct CheckoutView: View {
             print("Failed to load addresses: \(error)")
         }
     }
-    
+
     private func loadStores() async {
         do {
             let fetched = try await SyncManager.shared.fetchStores()
@@ -276,7 +273,7 @@ struct CheckoutView: View {
             print("Failed to load stores: \(error)")
         }
     }
-    
+
     private func loadTaxRules() async {
         do {
             let fetched = try await SyncManager.shared.fetchTaxRules()
@@ -287,7 +284,7 @@ struct CheckoutView: View {
             print("Failed to load tax rules: \(error)")
         }
     }
-    
+
     private func loadOffers() async {
         do {
             let offers = try await SyncManager.shared.fetchActiveOffers()
@@ -297,19 +294,19 @@ struct CheckoutView: View {
                     let status = (offer.status ?? "").lowercased().trimmingCharacters(in: .whitespaces)
                     return status == "active"
                 }
-                print("🏁 CheckoutView: Loaded \(availableOffers.count) active offers")
+                print(" CheckoutView: Loaded \(availableOffers.count) active offers")
             }
         } catch {
-            print("❌ Failed to load offers: \(error)")
+            print(" Failed to load offers: \(error)")
             await MainActor.run {
                 self.errorMessage = "Unable to load offers at this time. Please try again later."
             }
         }
     }
-    
+
     private func saveNewAddress(_ structured: StructuredAddress) {
         guard let userId = userManager.supabaseUserId else { return }
-        
+
         Task {
             let newId = UUID()
             let newDTO = AddressDTO(
@@ -327,7 +324,7 @@ struct CheckoutView: View {
                 is_default: userAddresses.isEmpty,
                 created_at: nil
             )
-            
+
             do {
                 try await SyncManager.shared.addAddress(address: newDTO)
                 await loadUserAddresses()
@@ -339,21 +336,21 @@ struct CheckoutView: View {
             }
         }
     }
-    
+
     // MARK: - Components
-    
+
     private func checkoutSection<Content: View>(title: String, @ViewBuilder content: @escaping () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(title).font(.system(size: 11, weight: .bold)).tracking(2).foregroundStyle(AppColors.grayMedium)
             content()
         }
     }
-    
+
     private var addressCard: some View {
         Button(action: { showAddressPicker = true }) {
             HStack(spacing: 16) {
                 Image(systemName: "mappin.circle.fill").font(.title2).foregroundStyle(AppColors.gold)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     if let addr = currentAddress {
                         Text(addr.building_name ?? "Selected Location")
@@ -367,10 +364,10 @@ struct CheckoutView: View {
                             .font(.subheadline).fontWeight(.medium)
                             .foregroundStyle(AppColors.grayMedium)
                     }
-                    Text("Standard Delivery: 3–5 Business Days")
+                    Text("Standard Delivery: 35 Business Days")
                         .font(.caption2).foregroundStyle(AppColors.gold.opacity(0.8)).padding(.top, 2)
                 }
-                
+
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.gold)
             }
@@ -378,12 +375,12 @@ struct CheckoutView: View {
         }
         .buttonStyle(.plain)
     }
-    
+
     private var storeCard: some View {
         Button(action: { showStorePicker = true }) {
             HStack(spacing: 16) {
                 Image(systemName: "building.2.fill").font(.title2).foregroundStyle(AppColors.gold)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     if let store = currentStore {
                         Text(store.name)
@@ -398,7 +395,7 @@ struct CheckoutView: View {
                             .foregroundStyle(AppColors.grayMedium)
                     }
                 }
-                
+
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.gold)
             }
@@ -406,18 +403,18 @@ struct CheckoutView: View {
         }
         .buttonStyle(.plain)
     }
-    
+
     private var paymentCard: some View {
         Button(action: { showPaymentPicker = true }) {
             HStack(spacing: 16) {
                 Image(systemName: "creditcard.fill").font(.title2).foregroundStyle(AppColors.gold)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(selectedPayment).font(.subheadline).fontWeight(.medium)
                         .foregroundStyle(AppColors.pureWhite)
                     Text(subtotalToCheckout.formattedPrice).font(.caption2).foregroundStyle(AppColors.grayLight)
                 }
-                
+
                 Spacer()
                 Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColors.gold)
             }
@@ -425,7 +422,7 @@ struct CheckoutView: View {
         }
         .buttonStyle(.plain)
     }
-    
+
     private var orderSummaryCard: some View {
         VStack(spacing: 12) {
             ForEach(itemsToCheckout.prefix(3)) { item in
@@ -437,20 +434,20 @@ struct CheckoutView: View {
                         .font(.caption).foregroundStyle(AppColors.pureWhite)
                 }
             }
-            
+
             if itemsToCheckout.count > 3 {
                 Text("+ \(itemsToCheckout.count - 3) more items")
                     .font(.caption2).foregroundStyle(AppColors.gold).frame(maxWidth: .infinity, alignment: .leading)
             }
-            
+
             Divider().background(AppColors.grayDark.opacity(0.3))
-            
+
             HStack {
                 Text("SUBTOTAL").font(.caption).foregroundStyle(AppColors.grayLight)
                 Spacer()
                 Text(subtotalToCheckout.formattedPrice).font(.caption).foregroundStyle(AppColors.pureWhite)
             }
-            
+
             if offerDiscount > 0 {
                 HStack {
                     Text(selectedOffer?.name.uppercased() ?? "OFFER").font(.caption).foregroundStyle(AppColors.gold)
@@ -458,13 +455,12 @@ struct CheckoutView: View {
                     Text("-\(offerDiscount.formattedPrice)").font(.caption).foregroundStyle(AppColors.gold)
                 }
             }
-            
-            // ── Step 3 : Tax 18% ────────────────────────────────
+
             HStack(spacing: 4) {
                 Text("TAX")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(AppColors.grayLight)
-                Text("18% × \(taxableAmount.formattedPrice)")
+                Text("18%  \(taxableAmount.formattedPrice)")
                     .font(.system(size: 10))
                     .foregroundStyle(AppColors.grayMedium)
                 Spacer()
@@ -472,31 +468,30 @@ struct CheckoutView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(AppColors.grayLight)
             }
-            
-            // ── Step 4 : Region Tax (Category based from Group5 RSMS) ──
+
             if regionTaxAmount > 0 {
                 HStack(spacing: 4) {
                     Text("REGION TAX")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(AppColors.grayLight)
-                    
+
                     let baseAmount = taxableAmount + gstAmount
                     let taxRuleForDisplay = regionTaxRules.first(where: { ($0.category ?? "").lowercased().trimmingCharacters(in: .whitespaces) == itemsToCheckout.first?.product.category.lowercased().trimmingCharacters(in: .whitespaces) })
                     let ratePercent = (taxRuleForDisplay?.rate ?? 0) * 100
-                    
+
                     Text("Admin Tax (\(ratePercent, specifier: "%.1f")%) on \(baseAmount.formattedPrice)")
                         .font(.system(size: 10))
                         .foregroundStyle(AppColors.grayMedium)
-                    
+
                     Spacer()
                     Text("+" + regionTaxAmount.formattedPrice)
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(AppColors.grayLight)
                 }
             }
-            
+
             Divider().background(AppColors.grayDark.opacity(0.3))
-            
+
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("TOTAL AMOUNT").font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
@@ -513,7 +508,7 @@ struct CheckoutView: View {
         }
         .padding(16).darkCard(goldBorder: false)
     }
-    
+
     private var offersCard: some View {
         VStack(spacing: 16) {
             ForEach(availableOffers) { offer in
@@ -532,14 +527,14 @@ struct CheckoutView: View {
             }
         }
     }
-    
+
     private var placeOrderFooter: some View {
         VStack(spacing: 0) {
             // Subtle top separator
             Rectangle()
                 .fill(AppColors.gold.opacity(0.1))
                 .frame(height: 0.5)
-            
+
             Button(action: { placeOrder() }) {
                 HStack(spacing: 12) {
                     if isPlacingOrder {
@@ -563,13 +558,13 @@ struct CheckoutView: View {
         }
         .background(AppColors.background.ignoresSafeArea(edges: .bottom))
     }
-    
+
     // MARK: - Actions
-    
+
     private func placeOrder() {
         guard let userId = userManager.supabaseUserId,
               let email = userManager.currentUser?.email else { return }
-        
+
         // If not using Razorpay, just simulate success for now
         if !selectedPayment.contains("Razorpay") {
             withAnimation {
@@ -581,17 +576,17 @@ struct CheckoutView: View {
             }
             return
         }
-        
+
         withAnimation { isPlacingOrder = true }
-        
+
         Task {
             do {
                 // 1. Create Razorpay Order via Edge Function
                 let orderId = try await ordersManager.fetchRazorpayOrderID(amount: finalTotal)
-                
+
                 // 2. Open Razorpay Checkout (with slight delay for UI stability)
                 try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
-                
+
                 await MainActor.run {
                     RazorpayManager.shared.startPayment(
                         orderId: orderId,
@@ -619,32 +614,32 @@ struct CheckoutView: View {
             }
         }
     }
-    
+
     private func handlePaymentSuccess() {
         // DEBUG: Confirm this is only called after a successful Razorpay payment
-        print("✅ handlePaymentSuccess invoked – proceeding to record order in Supabase")
+        print(" handlePaymentSuccess invoked  proceeding to record order in Supabase")
         guard let userId = userManager.supabaseUserId else { return }
-        
+
         // 1. Capture items BEFORE clearing cart
         let itemsToOrder = itemsToCheckout
         self.failedOrderItems = itemsToOrder // Store in case we need to retry
-        
+
         // 2. Clear cart INSTANTLY so user sees their bag is empty
         if directPurchaseItem == nil { cartManager.clearCart(userId: userId) }
-        
+
         // 3. Record the order in our database in the background
         Task {
             let addressText = currentAddress?.full_address ?? "Unknown Address"
             await performOrderRecording(items: itemsToOrder, userId: userId, shippingAddress: addressText, storeId: selectedStoreId!)
         }
     }
-    
+
     private func performOrderRecording(items: [CartItem], userId: UUID, shippingAddress: String, storeId: UUID) async {
         isPlacingOrder = true
         do {
             try await ordersManager.placeOrder(
-                from: items, 
-                userId: userId, 
+                from: items,
+                userId: userId,
                 redeemedPoints: 0,
                 offerDiscount: offerDiscount,
                 offerId: selectedOffer?.id,
@@ -663,7 +658,7 @@ struct CheckoutView: View {
         }
         isPlacingOrder = false
     }
-    
+
     private func retryOrderRecording() {
         guard let userId = userManager.supabaseUserId else { return }
         let addressText = currentAddress?.full_address ?? "Unknown Address"
@@ -682,7 +677,7 @@ struct AddressPickerSheet: View {
     let onAddNew: () -> Void
     let onRefresh: () -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -699,7 +694,7 @@ struct AddressPickerSheet: View {
                                     Image(systemName: selectedId == address.id ? "checkmark.circle.fill" : "circle")
                                         .font(.system(size: 20))
                                         .foregroundStyle(selectedId == address.id ? AppColors.gold : AppColors.grayDark)
-                                    
+
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(address.building_name ?? "No Name")
                                             .font(.subheadline).fontWeight(.bold)
@@ -719,7 +714,7 @@ struct AddressPickerSheet: View {
                             .buttonStyle(.plain)
                             Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
                         }
-                        
+
                         // Add New
                         Button(action: onAddNew) {
                             HStack(spacing: 16) {
@@ -762,7 +757,7 @@ struct SimplePickerSheet: View {
     let options: [String]
     @Binding var selected: String
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -785,7 +780,7 @@ struct SimplePickerSheet: View {
                                 .padding(.horizontal, 20).padding(.vertical, 18)
                             }
                             .buttonStyle(.plain)
-                            
+
                             if option != options.last {
                                 Divider().background(AppColors.grayDark.opacity(0.3)).padding(.horizontal, 20)
                             }
@@ -811,7 +806,6 @@ struct SimplePickerSheet: View {
     CheckoutView()
         .withLuxePreviewEnvironment()
 }
-
 
 #Preview {
     CheckoutView()

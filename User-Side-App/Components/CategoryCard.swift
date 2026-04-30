@@ -1,16 +1,13 @@
-//
 //  CategoryCard.swift
 //  User-Side-App
-//
-//  Premium iOS-standard category card — elegant pill with icon, name, and count
-//
+//  Premium iOS-standard category card  elegant pill with icon, name, and count
 
 import SwiftUI
 
 struct CategoryCard: View {
     let category: Category
     var onTap: (() -> Void)? = nil
-    
+
     var body: some View {
         Button(action: { onTap?() }) {
             VStack(spacing: 12) {
@@ -20,7 +17,7 @@ struct CategoryCard: View {
                         .fill(AppColors.surfaceDark)
                         .frame(width: 72, height: 72)
                         .shadow(color: .black.opacity(0.3), radius: 8, y: 4)
-                    
+
                     Circle()
                         .stroke(
                             LinearGradient(
@@ -31,7 +28,7 @@ struct CategoryCard: View {
                             lineWidth: 1.5
                         )
                         .frame(width: 72, height: 72)
-                    
+
                     // Subtle inner glow
                     Circle()
                         .fill(
@@ -43,7 +40,7 @@ struct CategoryCard: View {
                             )
                         )
                         .frame(width: 72, height: 72)
-                    
+
                     // Icon
                     Image(systemName: category.icon)
                         .font(.system(size: 26, weight: .light))
@@ -56,7 +53,7 @@ struct CategoryCard: View {
                         )
                         .shadow(color: AppColors.gold.opacity(0.3), radius: 3)
                 }
-                
+
                 // Elegant Label
                 Text(category.name.uppercased())
                     .font(.system(size: 10, weight: .semibold))

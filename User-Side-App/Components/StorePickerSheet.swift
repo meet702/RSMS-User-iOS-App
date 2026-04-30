@@ -1,7 +1,5 @@
-//
 //  StorePickerSheet.swift
 //  User-Side-App
-//
 
 import SwiftUI
 
@@ -9,7 +7,7 @@ struct StorePickerSheet: View {
     let stores: [StoreDTO]
     @Binding var selectedId: UUID?
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -25,7 +23,7 @@ struct StorePickerSheet: View {
                                     Image(systemName: selectedId == store.id ? "checkmark.circle.fill" : "circle")
                                         .font(.system(size: 20))
                                         .foregroundStyle(selectedId == store.id ? AppColors.gold : AppColors.grayDark)
-                                    
+
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(store.name)
                                             .font(.subheadline).fontWeight(.bold)

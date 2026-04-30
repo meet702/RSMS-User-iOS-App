@@ -1,9 +1,6 @@
-//
 //  PromoBanner.swift
 //  User-Side-App
-//
 //  Promotional banner data model for LUXE
-//
 
 import Foundation
 
@@ -15,7 +12,7 @@ struct PromoBanner: Identifiable, Hashable, Sendable {
     let imageName: String
     let targetCategory: String?
     let gradientAngle: Double
-    
+
     init(
         id: UUID = UUID(),
         title: String,

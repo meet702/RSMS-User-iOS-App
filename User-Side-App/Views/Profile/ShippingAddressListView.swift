@@ -1,9 +1,6 @@
-//
 //  ShippingAddressListView.swift
 //  User-Side-App
-//
 //  Premium address management for the LUXE Profile
-//
 
 import SwiftUI
 
@@ -13,11 +10,11 @@ struct ShippingAddressListView: View {
     @State private var isLoading = true
     @State private var showMapPicker = false
     @State private var selectedAddressForEdit: AddressDTO? = nil
-    
+
     var body: some View {
         ZStack {
             AppColors.background.ignoresSafeArea()
-            
+
             if isLoading {
                 ProgressView().tint(AppColors.gold)
             } else if addresses.isEmpty {
@@ -25,7 +22,7 @@ struct ShippingAddressListView: View {
             } else {
                 addressList
             }
-            
+
             addAddressButton
         }
         .navigationTitle("SHIPPING ADDRESSES")
@@ -47,15 +44,15 @@ struct ShippingAddressListView: View {
             }
         }
     }
-    
+
     // MARK: - Components
-    
+
     private var emptyState: some View {
         VStack(spacing: 20) {
             Image(systemName: "mappin.and.ellipse")
                 .font(.system(size: 60, weight: .light))
                 .foregroundStyle(AppColors.gold.opacity(0.3))
-            
+
             VStack(spacing: 8) {
                 Text("NO SAVED ADDRESSES")
                     .font(.headline).tracking(2).foregroundStyle(AppColors.pureWhite)
@@ -65,7 +62,7 @@ struct ShippingAddressListView: View {
             }
         }
     }
-    
+
     private var addressList: some View {
         ScrollView {
             VStack(spacing: 16) {
@@ -80,7 +77,7 @@ struct ShippingAddressListView: View {
             await loadAddresses()
         }
     }
-    
+
     private func addressRow(_ address: AddressDTO) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -93,7 +90,7 @@ struct ShippingAddressListView: View {
                         .background(AppColors.gold)
                         .clipShape(Capsule())
                 }
-                
+
                 if address.is_default {
                     Text("DEFAULT")
                         .font(.system(size: 10, weight: .bold))
@@ -102,16 +99,16 @@ struct ShippingAddressListView: View {
                         .padding(.horizontal, 8).padding(.vertical, 4)
                         .overlay(Capsule().stroke(AppColors.gold, lineWidth: 1))
                 }
-                
+
                 Spacer()
-                
+
                 Button(action: { deleteAddress(address) }) {
                     Image(systemName: "trash")
                         .font(.system(size: 14))
                         .foregroundStyle(Color.red.opacity(0.7))
                 }
             }
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(address.building_name ?? "")
                     .font(.subheadline).fontWeight(.bold)
@@ -129,7 +126,7 @@ struct ShippingAddressListView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColors.grayDark.opacity(0.2), lineWidth: 1))
     }
-    
+
     private var addAddressButton: some View {
         VStack {
             Spacer()
@@ -149,9 +146,9 @@ struct ShippingAddressListView: View {
             .padding(.bottom, 30)
         }
     }
-    
+
     // MARK: - Logic
-    
+
     private func loadAddresses() async {
         guard let userId = userManager.supabaseUserId else { return }
         isLoading = true
@@ -162,7 +159,7 @@ struct ShippingAddressListView: View {
         }
         isLoading = false
     }
-    
+
     private func saveAddress(_ structured: StructuredAddress) {
         guard let userId = userManager.supabaseUserId else { return }
         Task {
@@ -181,7 +178,7 @@ struct ShippingAddressListView: View {
                 is_default: addresses.isEmpty,
                 created_at: nil
             )
-            
+
             do {
                 try await SyncManager.shared.addAddress(address: newAddress)
                 await loadAddresses()
@@ -190,7 +187,7 @@ struct ShippingAddressListView: View {
             }
         }
     }
-    
+
     private func deleteAddress(_ address: AddressDTO) {
         Task {
             do {

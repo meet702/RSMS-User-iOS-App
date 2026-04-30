@@ -1,9 +1,6 @@
-//
 //  SeeAllProductsView.swift
 //  User-Side-App
-//
-//  Full product list sheet — opened from "See All" in Home sections
-//
+//  Full product list sheet  opened from "See All" in Home sections
 
 import SwiftUI
 
@@ -11,12 +8,12 @@ struct SeeAllProductsView: View {
     let title: String
     let products: [Product]
     @Environment(\.dismiss) private var dismiss
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 14),
         GridItem(.flexible(), spacing: 14),
     ]
-    
+
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
@@ -29,7 +26,7 @@ struct SeeAllProductsView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 20)
-                    
+
                     // Product grid
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(products) { product in
@@ -40,7 +37,7 @@ struct SeeAllProductsView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    
+
                     Color.clear.frame(height: 20)
                 }
                 .padding(.top, 8)

@@ -1,36 +1,33 @@
-//
 //  MainTabView.swift
 //  User-Side-App
-//
-//  DIOR — iOS 26 Liquid Glass tab navigation (4 tabs)
+//  DIOR  iOS 26 Liquid Glass tab navigation (4 tabs)
 //  Profile is presented as a modal from the Home header.
-//
 
 import SwiftUI
 
 struct MainTabView: View {
     @Environment(NavigationManager.self) private var navManager
     @Environment(CartManager.self) private var cartManager
-    
+
     enum AppTab: Hashable {
         case home, shop, cart, orders
     }
-    
+
     var body: some View {
         TabView(selection: Bindable(navManager).selectedTab) {
             Tab("Home", systemImage: "house.fill", value: AppTab.home) {
                 HomeView()
             }
-            
+
             Tab("Shop", systemImage: "bag.fill", value: AppTab.shop) {
                 ShopView()
             }
-            
+
             Tab("Cart", systemImage: "cart.fill", value: AppTab.cart) {
                 CartView()
             }
             .badge(cartManager.totalItems)
-            
+
             Tab("Orders", systemImage: "shippingbox.fill", value: AppTab.orders) {
                 NavigationStack {
                     OrdersView()

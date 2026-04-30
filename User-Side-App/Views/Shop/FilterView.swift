@@ -1,16 +1,13 @@
-//
 //  FilterView.swift
 //  User-Side-App
-//
-//  Filter bottom sheet for Shop — budget & brand selection
-//
+//  Filter bottom sheet for Shop  budget & brand selection
 
 import SwiftUI
 
 struct FilterView: View {
     @Bindable var viewModel: ShopViewModel
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Handle
@@ -18,16 +15,16 @@ struct FilterView: View {
                 .fill(AppColors.grayDark)
                 .frame(width: 40, height: 4)
                 .padding(.top, 12)
-            
+
             // Header
             HStack {
                 Text("Filters")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
-                
+
                 Spacer()
-                
+
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 14, weight: .semibold))
@@ -39,35 +36,35 @@ struct FilterView: View {
             }
             .padding(.horizontal, 24)
             .padding(.top, 20)
-            
+
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 28) {
-                    
+
                     // MARK: - Budget
                     budgetSection
-                    
+
                     // Divider
                     Rectangle()
                         .fill(AppColors.grayDark.opacity(0.5))
                         .frame(height: 0.5)
                         .padding(.horizontal, 24)
-                    
+
                     // MARK: - Brands
                     brandSection
                 }
                 .padding(.top, 24)
                 .padding(.bottom, 100)
             }
-            
+
             // Bottom action bar
             bottomBar
         }
         .background(AppColors.surfaceDark)
         .presentationCornerRadius(24)
     }
-    
+
     // MARK: - Budget Section
-    
+
     private var budgetSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Budget")
@@ -75,27 +72,27 @@ struct FilterView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
                 .padding(.horizontal, 24)
-            
+
             VStack(spacing: 8) {
                 Text("Up to \(viewModel.maxBudget.formattedPrice)")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundStyle(AppColors.gold)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 Slider(
                     value: $viewModel.maxBudget,
                     in: 10_000...100_000_000,
                     step: 100_000
                 )
                 .tint(AppColors.gold)
-                
+
                 HStack {
-                    Text("₹10K")
+                    Text("10K")
                         .font(.caption2)
                         .foregroundStyle(AppColors.grayLight)
                     Spacer()
-                    Text("₹10Cr")
+                    Text("10Cr")
                         .font(.caption2)
                         .foregroundStyle(AppColors.grayLight)
                 }
@@ -103,9 +100,9 @@ struct FilterView: View {
             .padding(.horizontal, 24)
         }
     }
-    
+
     // MARK: - Brand Section
-    
+
     private var brandSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Brands")
@@ -113,7 +110,7 @@ struct FilterView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
                 .padding(.horizontal, 24)
-            
+
             VStack(spacing: 0) {
                 ForEach(viewModel.availableBrands, id: \.self) { brand in
                     Button(action: {
@@ -130,9 +127,9 @@ struct FilterView: View {
                                     viewModel.selectedBrands.contains(brand)
                                     ? AppColors.gold : AppColors.pureWhite
                                 )
-                            
+
                             Spacer()
-                            
+
                             ZStack {
                                 RoundedRectangle(cornerRadius: 4)
                                     .stroke(
@@ -141,12 +138,12 @@ struct FilterView: View {
                                         lineWidth: 1.5
                                     )
                                     .frame(width: 20, height: 20)
-                                
+
                                 if viewModel.selectedBrands.contains(brand) {
                                     RoundedRectangle(cornerRadius: 4)
                                         .fill(AppColors.gold)
                                         .frame(width: 20, height: 20)
-                                    
+
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 10, weight: .bold))
                                         .foregroundStyle(AppColors.background)
@@ -160,9 +157,9 @@ struct FilterView: View {
             }
         }
     }
-    
+
     // MARK: - Bottom Bar
-    
+
     private var bottomBar: some View {
         HStack(spacing: 12) {
             // Reset
@@ -181,7 +178,7 @@ struct FilterView: View {
                             .stroke(AppColors.gold, lineWidth: 1)
                     )
             }
-            
+
             // Apply
             Button(action: { dismiss() }) {
                 Text("APPLY")

@@ -1,7 +1,5 @@
-//
 //  ExchangeRate.swift
 //  User-Side-App
-//
 
 import Foundation
 

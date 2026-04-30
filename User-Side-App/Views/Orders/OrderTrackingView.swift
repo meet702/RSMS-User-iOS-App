@@ -1,9 +1,6 @@
-//
 //  OrderTrackingView.swift
 //  User-Side-App
-//
 //  Detailed shipment tracking and order info view
-//
 
 import SwiftUI
 
@@ -12,11 +9,11 @@ struct OrderTrackingView: View {
     let onCancel: () async throws -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(UserManager.self) private var userManager
-    
+
     @State private var showCancelPrompt = false
     @State private var errorAlertMessage: String?
     @State private var showStatusError = false
-    
+
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 24) {
@@ -31,24 +28,24 @@ struct OrderTrackingView: View {
                         .foregroundStyle(AppColors.grayLight)
                 }
                 .padding(.top, 16)
-                
+
                 // ETA Card
                 etaCard
-                
+
                 // Timeline Tracking
                 trackingTimeline
-                
+
                 // Items
                 itemsSection
-                
+
                 // Download Invoice
                 downloadInvoiceButton
-                
+
                 // Cancel Button (if applicable)
                 if order.status == .placed {
                     cancelButton
                 }
-                
+
                 Color.clear.frame(height: 40)
             }
             .padding(.horizontal, 20)
@@ -96,9 +93,9 @@ struct OrderTrackingView: View {
             Text(errorAlertMessage ?? "Something went wrong.")
         }
     }
-    
+
     // MARK: - ETA Card
-    
+
     @ViewBuilder
     private var etaCard: some View {
         if order.status.isActive {
@@ -107,7 +104,7 @@ struct OrderTrackingView: View {
                     Text("Estimated Delivery")
                         .font(.caption)
                         .foregroundStyle(AppColors.grayLight)
-                    
+
                     if let eta = order.estimatedDelivery {
                         Text(eta.formatted(date: .complete, time: .omitted))
                             .font(.headline)
@@ -118,9 +115,9 @@ struct OrderTrackingView: View {
                             .foregroundStyle(AppColors.pureWhite)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "box.truck.badge.clock.fill")
                     .font(.system(size: 32, weight: .light))
                     .foregroundStyle(AppColors.gold)
@@ -134,16 +131,16 @@ struct OrderTrackingView: View {
                     Text("Delivered On")
                         .font(.caption)
                         .foregroundStyle(AppColors.grayLight)
-                    
+
                     if let deliveredStep = order.trackingSteps.first(where: { $0.status == .delivered }) {
                         Text(deliveredStep.date?.formatted(date: .complete, time: .omitted) ?? "Recently")
                             .font(.headline)
                             .foregroundStyle(AppColors.pureWhite)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(AppColors.gold)
@@ -156,14 +153,14 @@ struct OrderTrackingView: View {
                     Text("Status")
                         .font(.caption)
                         .foregroundStyle(AppColors.grayLight)
-                    
+
                     Text("Cancelled")
                         .font(.headline)
                         .foregroundStyle(.red)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "xmark.seal.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(.red)
@@ -174,9 +171,9 @@ struct OrderTrackingView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.red.opacity(0.3), lineWidth: 1))
         }
     }
-    
+
     // MARK: - Timeline Tracking
-    
+
     private var trackingTimeline: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Tracking")
@@ -184,7 +181,7 @@ struct OrderTrackingView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
                 .padding(.bottom, 16)
-            
+
             ForEach(Array(order.trackingSteps.enumerated()), id: \.element.id) { index, step in
                 HStack(alignment: .top, spacing: 16) {
                     // Line & Node
@@ -194,7 +191,7 @@ struct OrderTrackingView: View {
                             Circle()
                                 .fill(step.isCompleted ? AppColors.gold : AppColors.surfaceElevated)
                                 .frame(width: 16, height: 16)
-                            
+
                             if step.isCompleted {
                                 Circle()
                                     .fill(AppColors.background)
@@ -208,7 +205,7 @@ struct OrderTrackingView: View {
                                 .frame(width: 24, height: 24)
                                 .opacity((step.isCompleted && (index == order.trackingSteps.count - 1 || !order.trackingSteps[index + 1].isCompleted)) ? 1 : 0)
                         )
-                        
+
                         // Vertical Connecting Line
                         if index < order.trackingSteps.count - 1 {
                             Rectangle()
@@ -218,18 +215,18 @@ struct OrderTrackingView: View {
                         }
                     }
                     .frame(width: 24) // Center alignment
-                    
+
                     // Content
                     VStack(alignment: .leading, spacing: 4) {
                         Text(step.title)
                             .font(.subheadline)
                             .fontWeight(.bold)
                             .foregroundStyle(step.isCompleted ? AppColors.pureWhite : AppColors.grayLight)
-                        
+
                         Text(step.description)
                             .font(.caption)
                             .foregroundStyle(AppColors.grayMedium)
-                        
+
                         if let date = step.date {
                             Text(date.formatted(date: .omitted, time: .shortened))
                                 .font(.caption2)
@@ -245,16 +242,16 @@ struct OrderTrackingView: View {
         .padding(20)
         .darkCard()
     }
-    
+
     // MARK: - Items section
-    
+
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Items")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
-            
+
             ForEach(order.items) { item in
                 HStack(spacing: 12) {
                     AsyncProductImage(product: item.product)
@@ -264,16 +261,16 @@ struct OrderTrackingView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
                         )
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.product.name)
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .foregroundStyle(AppColors.pureWhite)
-                        
+
                         HStack {
                             if let variant = item.variant {
-                                Text("\(variant) · ")
+                                Text("\(variant)  ")
                                     .foregroundStyle(AppColors.grayLight)
                             }
                             Text("Qty: \(item.quantity)")
@@ -281,9 +278,9 @@ struct OrderTrackingView: View {
                         }
                         .font(.caption)
                     }
-                    
+
                     Spacer()
-                    
+
                     Text((item.priceAtPurchase * Double(item.quantity)).formattedPrice)
                         .font(.subheadline)
                         .fontWeight(.semibold)
@@ -291,11 +288,11 @@ struct OrderTrackingView: View {
                 }
                 .padding(.bottom, item.id == order.items.last?.id ? 0 : 12)
             }
-            
+
             Divider()
                 .background(AppColors.grayDark.opacity(0.5))
                 .padding(.vertical, 8)
-            
+
             // Totals Breakdowns
             VStack(spacing: 8) {
                 HStack {
@@ -305,7 +302,7 @@ struct OrderTrackingView: View {
                     Text(order.subtotal.formattedPrice)
                         .foregroundStyle(AppColors.pureWhite)
                 }
-                
+
                 if order.discount > 0 {
                     HStack {
                         Text("Discount")
@@ -329,7 +326,7 @@ struct OrderTrackingView: View {
                     Text(order.deliveryFee == 0 ? "FREE" : order.deliveryFee.formattedPrice)
                         .foregroundStyle(order.deliveryFee == 0 ? AppColors.gold : AppColors.pureWhite)
                 }
-                
+
                 HStack {
                     Text("Total")
                         .font(.headline)
@@ -348,7 +345,7 @@ struct OrderTrackingView: View {
         .padding(20)
         .darkCard()
     }
-    
+
     private var downloadInvoiceButton: some View {
         Button(action: {
             if let url = InvoicePDFGenerator.generateInvoice(for: order, userName: userManager.currentUser?.fullName ?? "Valued Customer") {

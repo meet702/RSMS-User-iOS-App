@@ -1,9 +1,6 @@
-//
 //  Order.swift
 //  User-Side-App
-//
 //  Order data models for LUXE
-//
 
 import Foundation
 
@@ -12,15 +9,15 @@ enum OrderStatus: String, CaseIterable, Codable, Sendable {
     case shipped = "shipped"
     case delivered = "delivered"
     case cancelled = "cancelled"
-    
+
     var isActive: Bool {
         return self == .placed || self == .shipped
     }
-    
+
     /// Fuzzy initializer to handle database variations
     static func from(string: String) -> OrderStatus {
         let normalized = string.lowercased().trimmingCharacters(in: .whitespaces)
-        
+
         switch normalized {
         case "shipped", "dispatched", "on_the_way":
             return .shipped
@@ -49,7 +46,7 @@ struct OrderItem: Identifiable, Hashable, Sendable {
     let variant: String?
     let quantity: Int
     let priceAtPurchase: Double
-    
+
     init(id: UUID = UUID(), product: Product, variant: String? = nil, quantity: Int, priceAtPurchase: Double) {
         self.id = id
         self.product = product
@@ -72,11 +69,11 @@ struct Order: Identifiable, Hashable, Sendable {
     var finalTotal: Double {
         max(1.0, subtotal + taxes + deliveryFee - discount)
     }
-    
+
     var status: OrderStatus
     var trackingSteps: [TrackingStep]
     var estimatedDelivery: Date?
-    
+
     init(
         id: UUID = UUID(),
         orderNumber: String,

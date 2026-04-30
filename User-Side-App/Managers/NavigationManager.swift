@@ -1,33 +1,30 @@
-//
 //  NavigationManager.swift
 //  User-Side-App
-//
 //  Global navigation and state manager for DIOR
-//
 
 import SwiftUI
 
 @Observable
 class NavigationManager {
-    // Current active tab (4 tabs — Profile is a modal, not a tab)
+    // Current active tab (4 tabs  Profile is a modal, not a tab)
     var selectedTab: MainTabView.AppTab = .home
-    
+
     // Sheet presentation states
     var showNotifications = false
     var showAppointments = false
     var showProfile = false
     var showOffers = false
     var activeOffers: [OfferDTO] = []
-    
+
     // Check if any modal is currently visible
     var isAnyModalShowing: Bool {
         showNotifications || showAppointments || showProfile || showOffers
     }
-    
-    // Transition states — set before switching tabs
+
+    // Transition states  set before switching tabs
     var pendingCategoryFilter: String? = nil
     var pendingSearchText: String? = nil
-    
+
     func navigateToShop(withCategory category: String? = nil, search: String? = nil) {
         pendingCategoryFilter = category
         pendingSearchText = search
@@ -35,13 +32,13 @@ class NavigationManager {
             selectedTab = .shop
         }
     }
-    
+
     func navigateToOrders() {
         withAnimation {
             selectedTab = .orders
         }
     }
-    
+
     func navigateToCart() {
         withAnimation {
             selectedTab = .cart

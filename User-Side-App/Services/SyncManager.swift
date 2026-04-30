@@ -1,10 +1,7 @@
-//
 //  SyncManager.swift
 //  User-Side-App
-//
 //  Centralized Supabase Data Manager for DIOR.
 //  Handles all CRUD operations and remote state synchronization.
-//
 
 import Foundation
 import Supabase
@@ -13,14 +10,14 @@ import Supabase
 @Observable
 class SyncManager {
     static let shared = SyncManager()
-    
+
     // Remote client access
     private var client: SupabaseClient { SupabaseManager.shared.client }
-    
+
     private init() {}
-    
+
     // MARK: - Products & Categories (Public)
-    
+
     func fetchProducts() async throws -> [Product] {
         do {
             let dtos: [ProductDTO] = try await client
@@ -28,9 +25,9 @@ class SyncManager {
                 .select()
                 .execute()
                 .value
-            
-            print("✅ SyncManager: Successfully fetched \(dtos.count) products")
-            
+
+            print(" SyncManager: Successfully fetched \(dtos.count) products")
+
             return dtos.map { dto in
                 var product = dto.toProduct()
                 if product.name == "Rose des Vents Bracelet" {
@@ -39,11 +36,11 @@ class SyncManager {
                 return product
             }
         } catch {
-            print("❌ SyncManager (fetchProducts) Error: \(error)")
+            print(" SyncManager (fetchProducts) Error: \(error)")
             throw error
         }
     }
-    
+
     func fetchCategories() async throws -> [Category] {
         return [
             Category(name: "Jewellery", icon: "sparkles"),
@@ -56,9 +53,9 @@ class SyncManager {
             Category(name: "Other", icon: "tag.fill")
         ]
     }
-    
+
     // MARK: - Offers Management
-    
+
     func fetchActiveOffers() async throws -> [OfferDTO] {
         let dtos: [OfferDTO] = try await client
             .from("offers")
@@ -67,9 +64,9 @@ class SyncManager {
             .value
         return dtos
     }
-    
+
     // MARK: - Stores Management
-    
+
     func fetchStores() async throws -> [StoreDTO] {
         let dtos: [StoreDTO] = try await client
             .from("stores")
@@ -79,7 +76,7 @@ class SyncManager {
             .value
         return dtos
     }
-    
+
     /// Fetches admin-configured regional tax rules.
     func fetchTaxRules() async throws -> [TaxRuleDTO] {
         let rules: [TaxRuleDTO] = try await client
@@ -89,9 +86,9 @@ class SyncManager {
             .value
         return rules
     }
-    
+
     // MARK: - Profile Management
-    
+
     func fetchProfile(userId: UUID) async throws -> ProfileDTO? {
         let dtos: [ProfileDTO] = try await client
             .from("customer_profiles")
@@ -101,16 +98,16 @@ class SyncManager {
             .value
         return dtos.first
     }
-    
+
     func upsertProfile(_ profile: ProfileDTO) async throws {
         try await client
             .from("customer_profiles")
             .upsert(profile)
             .execute()
     }
-    
+
     // MARK: - Cart Operations
-    
+
     func fetchCart(userId: UUID) async throws -> [CartItemDTO] {
         let dtos: [CartItemDTO] = try await client
             .from("customer_cart")
@@ -118,11 +115,11 @@ class SyncManager {
             .eq("user_id", value: userId)
             .execute()
             .value
-            
-        // TEST OVERRIDE: 
-        // 1. Make the bracelet ₹1
-        // 2. We can't easily change the CartManager's tax logic here, 
-        //    but we ensure the DTO reflects the ₹1 price.
+
+        // TEST OVERRIDE:
+        // 1. Make the bracelet 1
+        // 2. We can't easily change the CartManager's tax logic here,
+        //    but we ensure the DTO reflects the 1 price.
         return dtos.map { dto in
             var updatedDto = dto
             if dto.products?.name == "Rose des Vents Bracelet" {
@@ -134,25 +131,25 @@ class SyncManager {
             return updatedDto
         }
     }
-    
+
     func syncAddToCart(userId: UUID, productId: UUID, variant: String?, quantity: Int) async throws {
-        print("📡 Syncing to Supabase Cart: User=\(userId), Product=\(productId), Variant=\(variant ?? "nil"), Qty=\(quantity)")
-        
+        print(" Syncing to Supabase Cart: User=\(userId), Product=\(productId), Variant=\(variant ?? "nil"), Qty=\(quantity)")
+
         struct CartInsert: Codable {
             let user_id: UUID
             let product_id: UUID
             let variant: String?
             let quantity: Int
         }
-        
+
         let data = CartInsert(user_id: userId, product_id: productId, variant: variant, quantity: quantity)
-        
+
         try await client
             .from("customer_cart")
             .upsert(data, onConflict: "user_id,product_id,variant")
             .execute()
     }
-    
+
     func syncRemoveFromCart(userId: UUID, productId: UUID, variant: String?) async throws {
         // Construct query to delete specific user-product-variant combo
         let query = client
@@ -160,7 +157,7 @@ class SyncManager {
             .delete()
             .eq("user_id", value: userId)
             .eq("product_id", value: productId)
-            
+
         if let variant = variant {
             try await query.eq("variant", value: variant).execute()
         } else {
@@ -168,7 +165,7 @@ class SyncManager {
             try await query.is("variant", value: nil).execute()
         }
     }
-    
+
     func syncClearCart(userId: UUID) async throws {
         try await client
             .from("customer_cart")
@@ -176,9 +173,9 @@ class SyncManager {
             .eq("user_id", value: userId)
             .execute()
     }
-    
+
     // MARK: - Wishlist Operations
-    
+
     func fetchWishlist(userId: UUID) async throws -> [Product] {
         let dtos: [WishlistItemDTO] = try await client
             .from("customer_wishlist")
@@ -188,7 +185,7 @@ class SyncManager {
             .value
         return dtos.compactMap { $0.products?.toProduct() }
     }
-    
+
     func syncAddToWishlist(userId: UUID, productId: UUID) async throws {
         let item = ["user_id": userId.uuidString, "product_id": productId.uuidString]
         try await client
@@ -196,7 +193,7 @@ class SyncManager {
             .insert(item)
             .execute()
     }
-    
+
     func syncRemoveFromWishlist(userId: UUID, productId: UUID) async throws {
         try await client
             .from("customer_wishlist")
@@ -205,11 +202,11 @@ class SyncManager {
             .eq("product_id", value: productId)
             .execute()
     }
-    
+
     // MARK: - Address Book Operations
-    
+
     func fetchAddresses(userId: UUID) async throws -> [AddressDTO] {
-        print("📡 SyncManager: Fetching addresses for user: \(userId)")
+        print(" SyncManager: Fetching addresses for user: \(userId)")
         let dtos: [AddressDTO] = try await client
             .from("customer_addresses")
             .select()
@@ -217,19 +214,19 @@ class SyncManager {
             .order("created_at", ascending: true)
             .execute()
             .value
-        print("✅ SyncManager: Found \(dtos.count) addresses")
+        print(" SyncManager: Found \(dtos.count) addresses")
         return dtos
     }
-    
+
     func addAddress(address: AddressDTO) async throws {
-        print("📡 SyncManager: Adding new address for user: \(address.user_id)")
+        print(" SyncManager: Adding new address for user: \(address.user_id)")
         try await client
             .from("customer_addresses")
             .insert(address)
             .execute()
-        print("✅ SyncManager: Address added successfully")
+        print(" SyncManager: Address added successfully")
     }
-    
+
     func updateAddress(address: AddressDTO) async throws {
         try await client
             .from("customer_addresses")
@@ -237,7 +234,7 @@ class SyncManager {
             .eq("id", value: address.id)
             .execute()
     }
-    
+
     func deleteAddress(id: UUID) async throws {
         try await client
             .from("customer_addresses")
@@ -245,9 +242,9 @@ class SyncManager {
             .eq("id", value: id)
             .execute()
     }
-    
+
     // MARK: - Order Operations
-    
+
     func fetchOrders(userId: UUID) async throws -> [OrderDTO] {
         try await client
             .from("customer_orders")
@@ -257,8 +254,8 @@ class SyncManager {
             .execute()
             .value
     }
-    
-    /// Fetches only the `status` field for a single order — lightweight live-check before cancel.
+
+    /// Fetches only the `status` field for a single order  lightweight live-check before cancel.
     func fetchOrderStatus(orderId: UUID) async throws -> String? {
         struct StatusOnly: Decodable { let status: String }
         let rows: [StatusOnly] = try await client
@@ -278,14 +275,14 @@ class SyncManager {
             .delete()
             .eq("order_id", value: orderId)
             .execute()
-            
+
         // Delete related order items to satisfy foreign key constraints
         try await client
             .from("customer_order_items")
             .delete()
             .eq("order_id", value: orderId)
             .execute()
-            
+
         // Finally, delete the order from customer_orders table
         try await client
             .from("customer_orders")
@@ -293,7 +290,7 @@ class SyncManager {
             .eq("id", value: orderId)
             .execute()
     }
-    
+
     private struct LuxeOrderParams: Encodable {
         let p_user_id: UUID
         let p_points_earned: Int
@@ -301,7 +298,7 @@ class SyncManager {
         let p_order_payload: OrderDict
         let p_items_payload: [ItemDict]
         let p_store_id: UUID
-        
+
         struct OrderDict: Encodable {
             let order_number: String
             let status: String
@@ -317,7 +314,7 @@ class SyncManager {
             let total_amount: Double
             let offer_id: UUID?
         }
-        
+
         struct ItemDict: Encodable {
             let product_id: UUID
             let variant: String
@@ -345,7 +342,7 @@ class SyncManager {
             total_amount: order.subtotal + order.taxes + order.delivery_fee - order.discount_amount,
             offer_id: order.offer_id
         )
-        
+
         let itemDicts = items.map { item in
             LuxeOrderParams.ItemDict(
                 product_id: item.product_id,
@@ -356,7 +353,7 @@ class SyncManager {
                 product_image_url: item.product_image_url ?? ""
             )
         }
-        
+
         let params = LuxeOrderParams(
             p_user_id: order.user_id,
             p_points_earned: pointsEarned,
@@ -365,18 +362,18 @@ class SyncManager {
             p_items_payload: itemDicts,
             p_store_id: storeId
         )
-        
+
         // 2. The One-Shot call via typed parameters
         try await client
             .rpc("complete_luxe_order", params: params)
             .execute()
     }
-    
+
     // MARK: - Appointment Operations
-    
+
     func bookAppointment(dto: AppointmentDTO, profile: ProfileDTO? = nil) async throws {
         // 1. Standard Write (for Customer's "My Appointments")
-        // We use a specific map here to avoid sending new fields (title/type) 
+        // We use a specific map here to avoid sending new fields (title/type)
         // to the legacy customer_appointments table which might not have them.
         struct LegacyAppointmentInsert: Encodable {
             let user_id: UUID
@@ -385,7 +382,7 @@ class SyncManager {
             let status: String
             let store_id: UUID?
         }
-        
+
         let customerData = LegacyAppointmentInsert(
             user_id: dto.user_id,
             appointment_date: dto.appointment_date,
@@ -393,28 +390,28 @@ class SyncManager {
             status: dto.status,
             store_id: dto.store_id
         )
-        
+
         do {
             try await client
                 .from("customer_appointments")
                 .insert(customerData)
                 .execute()
-            print("✅ Standard Appointment created")
+            print(" Standard Appointment created")
         } catch {
-            print("⚠️ Standard Appointment failed (likely missing columns): \(error.localizedDescription)")
+            print(" Standard Appointment failed (likely missing columns): \(error.localizedDescription)")
             // We continue anyway so the VIP sync can still happen
         }
-            
+
         // 2. VIP Cross-Sync (for Staff App "VIP & Events" Tab)
         if let profile = profile, let storeId = dto.store_id {
             try await syncToVIPSystem(dto: dto, profile: profile, storeId: storeId)
         }
     }
-    
+
     /// Creates a VIP Appointment entry for the Staff App.
     private func syncToVIPSystem(dto: AppointmentDTO, profile: ProfileDTO, storeId: UUID) async throws {
-        print("📡 Syncing to VIP System: User=\(profile.id), Store=\(storeId)")
-        
+        print(" Syncing to VIP System: User=\(profile.id), Store=\(storeId)")
+
         // Create the VIP Appointment entry
         struct VIPAppointmentInsert: Encodable {
             let guest_id: UUID
@@ -425,7 +422,7 @@ class SyncManager {
             let status: String
             let notes: String?
         }
-        
+
         let apptData = VIPAppointmentInsert(
             guest_id: profile.id,
             boutique_id: storeId,
@@ -435,21 +432,21 @@ class SyncManager {
             status: "scheduled",
             notes: dto.notes
         )
-        
+
         do {
             try await client
                 .from("vip_appointments")
                 .insert(apptData)
                 .execute()
-            print("✅ VIP Appointment synced")
+            print(" VIP Appointment synced")
         } catch {
-            print("❌ VIP Appointment sync failed: \(error.localizedDescription)")
+            print(" VIP Appointment sync failed: \(error.localizedDescription)")
             throw error
         }
     }
 
     // MARK: - Review Operations
-    
+
     func fetchReviews(productId: UUID) async throws -> [ReviewDTO] {
         let dtos: [ReviewDTO] = try await client
             .from("product_reviews")
@@ -460,20 +457,20 @@ class SyncManager {
             .value
         return dtos
     }
-    
+
     func addReview(review: ReviewDTO) async throws {
         try await client
             .from("product_reviews")
             .insert(review)
             .execute()
     }
-    
+
     /// Check if a user has purchased a specific product (any completed order containing the product)
     func hasUserPurchasedProduct(userId: UUID, productId: UUID) async throws -> Bool {
         struct OrderItemCheck: Decodable {
             let id: UUID
         }
-        
+
         // Query order items where the order belongs to this user and contains this product
         let items: [OrderItemCheck] = try await client
             .from("customer_order_items")
@@ -483,7 +480,7 @@ class SyncManager {
             .limit(1)
             .execute()
             .value
-        
+
         return !items.isEmpty
     }
 }

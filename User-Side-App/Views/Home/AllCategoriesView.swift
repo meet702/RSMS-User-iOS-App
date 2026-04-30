@@ -1,35 +1,32 @@
-//
 //  AllCategoriesView.swift
 //  User-Side-App
-//
 //  A dedicated, highly stylized masonry grid of all categories.
-//
 
 import SwiftUI
 
 struct AllCategoriesView: View {
     @Environment(\.dismiss) private var dismiss
     let categories: [Category]
-    
+
     // Split categories into left and right columns for the masonry effect
     private var leftColumn: [Category] {
         categories.enumerated().filter { $0.offset % 2 == 0 }.map { $0.element }
     }
-    
+
     private var rightColumn: [Category] {
         categories.enumerated().filter { $0.offset % 2 != 0 }.map { $0.element }
     }
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 LiquidGoldBackground()
-                
+
                 GeometryReader { proxy in
                     let screenWidth = proxy.size.width
                     // 24pt left padding + 24pt right padding + 28pt center gap = 76pt total horizontal spacing
                     let cardWidth = (screenWidth - 76) / 2
-                    
+
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 24) {
                             // Header
@@ -40,7 +37,7 @@ struct AllCategoriesView: View {
                                 .padding(.top, 20)
                                 .padding(.horizontal, 24)
                                 .accessibilityAddTraits(.isHeader)
-                            
+
                             // Masonry Grid
                             HStack(alignment: .top, spacing: 28) {
                                 // Left Column
@@ -49,7 +46,7 @@ struct AllCategoriesView: View {
                                         MasonryCategoryCard(category: category, isTall: category.name.count % 2 == 0, width: cardWidth)
                                     }
                                 }
-                                
+
                                 // Right Column (Offset slightly down for authentic masonry feel)
                                 VStack(spacing: 28) {
                                     ForEach(rightColumn) { category in
@@ -90,7 +87,7 @@ struct MasonryCategoryCard: View {
     let category: Category
     let isTall: Bool
     let width: CGFloat
-    
+
     // Dynamically map live database category names to the beautiful curated AI assets
     // strict mode: If no relevance is found, return nil to show a clean elegant card instead of a confusingly wrong image.
     private var luxuryBackgroundImage: String? {
@@ -104,7 +101,7 @@ struct MasonryCategoryCard: View {
         if name.contains("fashion") || name.contains("couture") || name.contains("cloth") || name.contains("apparel") { return "cat_fashion" }
         return nil
     }
-    
+
     var body: some View {
         Button(action: {
             // Actions
@@ -118,14 +115,14 @@ struct MasonryCategoryCard: View {
                 } else {
                     AppColors.surfaceDark
                 }
-                
+
                 // Rich Obsidian Gradient
                 LinearGradient(
                     colors: [.black.opacity(0.85), .black.opacity(0.1), .black.opacity(0.95)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                
+
                 // Glassy Inner glow
                 UnevenRoundedRectangle(
                     topLeadingRadius: 100, bottomLeadingRadius: 16,
@@ -138,7 +135,7 @@ struct MasonryCategoryCard: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                
+
                 // Content Layout
                 VStack(spacing: 0) {
                     // Floating Jewel Badge
@@ -147,7 +144,7 @@ struct MasonryCategoryCard: View {
                             .fill(.black.opacity(0.7))
                             .frame(width: 44, height: 44)
                             .shadow(color: .black.opacity(0.6), radius: 6, y: 3)
-                        
+
                         Image(systemName: category.icon)
                             .font(.system(size: 18, weight: .light))
                             .foregroundStyle(
@@ -159,9 +156,9 @@ struct MasonryCategoryCard: View {
                             )
                     }
                     .padding(.top, 24)
-                    
+
                     Spacer()
-                    
+
                     // Editorial Text Layout
                     VStack(spacing: 6) {
                         Text(category.name.uppercased())
@@ -171,7 +168,7 @@ struct MasonryCategoryCard: View {
                             .lineLimit(2)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 12)
-                        
+
                         Text("\(category.productCount) ITEMS")
                             .font(.system(size: 10, weight: .heavy, design: .monospaced))
                             .tracking(1)

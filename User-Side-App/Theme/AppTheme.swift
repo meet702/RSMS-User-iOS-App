@@ -1,9 +1,6 @@
-//
 //  AppTheme.swift
 //  User-Side-App
-//
-//  LUXE Design System — Black + Gold + White
-//
+//  LUXE Design System  Black + Gold + White
 
 import SwiftUI
 
@@ -14,35 +11,35 @@ enum AppColors {
     static let background = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? .black : .white
     })
-    
+
     static let surfaceDark = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? UIColor(hex: "111111") : UIColor(hex: "F8F8F8")
     })
-    
+
     static let surfaceElevated = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? UIColor(hex: "1A1A1A") : UIColor(hex: "F0F0F0")
     })
-    
+
     static let surfaceGold = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? UIColor(hex: "1A1508") : UIColor(hex: "FFF9EB")
     })
-    
+
     // Gold palette (stays consistent but can adjust for contrast)
     static let gold = Color(hex: "C9A96E")
     static let goldLight = Color(hex: "E8D5A3")
     static let goldDark = Color(hex: "A8893E")
-    
+
     // Neutrals - Semantic Naming
     static let pureWhite = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? .white : .black
     })
-    
+
     static let grayLight = Color(hex: "999999")
     static let grayMedium = Color(hex: "666666")
     static let grayDark = Color(UIColor { trait in
         trait.userInterfaceStyle == .dark ? UIColor(hex: "333333") : UIColor(hex: "E0E0E0")
     })
-    
+
     // Absolute Colors for contrast (do not flip)
     static let alwaysBlack = Color.black
     static let alwaysWhite = Color.white
@@ -110,25 +107,25 @@ extension LinearGradient {
         startPoint: .leading,
         endPoint: .trailing
     )
-    
+
     static let goldSubtle = LinearGradient(
         colors: [AppColors.gold, AppColors.goldLight],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
-    
+
     static let goldVertical = LinearGradient(
         colors: [AppColors.gold, AppColors.goldDark],
         startPoint: .top,
         endPoint: .bottom
     )
-    
+
     static let darkCard = LinearGradient(
         colors: [AppColors.surfaceDark, Color(hex: "0A0A0A")],
         startPoint: .top,
         endPoint: .bottom
     )
-    
+
     static let bannerGold = LinearGradient(
         colors: [AppColors.surfaceGold, AppColors.background],
         startPoint: .topLeading,
@@ -141,7 +138,7 @@ extension LinearGradient {
 struct DarkCardStyle: ViewModifier {
     var cornerRadius: CGFloat = 16
     var goldBorder: Bool = false
-    
+
     func body(content: Content) -> some View {
         content
             .background(AppColors.surfaceDark)
@@ -158,7 +155,7 @@ struct DarkCardStyle: ViewModifier {
 
 struct GoldBorderStyle: ViewModifier {
     var cornerRadius: CGFloat = 16
-    
+
     func body(content: Content) -> some View {
         content
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -180,7 +177,7 @@ extension View {
     func darkCard(cornerRadius: CGFloat = 16, goldBorder: Bool = false) -> some View {
         modifier(DarkCardStyle(cornerRadius: cornerRadius, goldBorder: goldBorder))
     }
-    
+
     func goldBorder(cornerRadius: CGFloat = 16) -> some View {
         modifier(GoldBorderStyle(cornerRadius: cornerRadius))
     }
@@ -192,11 +189,11 @@ extension Double {
     var formattedPrice: String {
         let manager = CurrencyManager.shared
         let convertedValue = self * manager.currentRate
-        
+
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencySymbol = manager.currentSymbol
-        
+
         // Zero decimals for JPY, INR, KRW, etc. Two decimals for USD, EUR, GBP.
         let zeroDecimalCurrencies = ["INR", "JPY", "KRW", "CLP"]
         if zeroDecimalCurrencies.contains(manager.currentCurrencyCode) {
@@ -206,7 +203,7 @@ extension Double {
             formatter.maximumFractionDigits = 2
             formatter.minimumFractionDigits = 2
         }
-        
+
         formatter.locale = Locale(identifier: manager.currentLocaleId)
         return formatter.string(from: NSNumber(value: convertedValue)) ?? "\(manager.currentSymbol)\(convertedValue)"
     }

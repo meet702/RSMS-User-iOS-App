@@ -1,9 +1,6 @@
-//
 //  User_Side_AppApp.swift
 //  User-Side-App
-//
 //  Created by Apple on 10/04/26.
-//
 
 import SwiftUI
 
@@ -16,7 +13,7 @@ struct User_Side_AppApp: App {
     @State private var themeManager = ThemeManager()
     @State private var ordersManager = OrdersManager()
     @State private var notificationManager = NotificationManager.shared
-    
+
     var body: some Scene {
         WindowGroup {
             ContentView()

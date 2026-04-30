@@ -1,9 +1,6 @@
-//
 //  ShopView.swift
 //  User-Side-App
-//
-//  LUXE Shop Tab — Product listing with filters, sort, search
-//
+//  LUXE Shop Tab  Product listing with filters, sort, search
 
 import SwiftUI
 
@@ -13,28 +10,28 @@ struct ShopView: View {
     @State private var showSort = false
     @Environment(WishlistManager.self) private var wishlistManager
     @Environment(NavigationManager.self) private var navManager
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 14),
         GridItem(.flexible(), spacing: 14),
     ]
-    
+
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
                     // Search bar
                     searchBar
-                    
+
                     // Category chips
                     categoryChips
-                    
+
                     // Controls row (result count + sort/filter)
                     controlsRow
-                    
+
                     // Product grid
                     productGrid
-                    
+
                     // Bottom spacing
                     Color.clear.frame(height: 20)
                 }
@@ -59,7 +56,7 @@ struct ShopView: View {
                             Image(systemName: "heart")
                                 .font(.system(size: 18))
                                 .foregroundStyle(AppColors.pureWhite)
-                            
+
                             if wishlistManager.count > 0 {
                                 Circle()
                                     .fill(AppColors.gold)
@@ -96,22 +93,22 @@ struct ShopView: View {
             }
         }
     }
-    
+
     // MARK: - Search Bar
-    
+
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(AppColors.gold)
-            
+
             TextField("", text: $viewModel.searchText, prompt:
                 Text("Search products, brands...")
                     .foregroundStyle(AppColors.grayMedium)
             )
             .font(.subheadline)
             .foregroundStyle(AppColors.pureWhite)
-            
+
             if !viewModel.searchText.isEmpty {
                 Button(action: { viewModel.searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
@@ -130,9 +127,9 @@ struct ShopView: View {
         )
         .padding(.horizontal, 20)
     }
-    
+
     // MARK: - Category Chips
-    
+
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
@@ -142,7 +139,7 @@ struct ShopView: View {
                         viewModel.selectedCategory = nil
                     }
                 }
-                
+
                 ForEach(viewModel.categoryNames, id: \.self) { name in
                     chipButton(label: name, isSelected: viewModel.selectedCategory == name) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -154,7 +151,7 @@ struct ShopView: View {
             .padding(.horizontal, 20)
         }
     }
-    
+
     private func chipButton(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(label)
@@ -172,17 +169,17 @@ struct ShopView: View {
         }
         .buttonStyle(PressButtonStyle())
     }
-    
+
     // MARK: - Controls Row
-    
+
     private var controlsRow: some View {
         HStack {
             Text("\(viewModel.filteredProducts.count) Results")
                 .font(.caption)
                 .foregroundStyle(AppColors.grayLight)
-            
+
             Spacer()
-            
+
             // Sort button
             Button(action: { showSort = true }) {
                 HStack(spacing: 4) {
@@ -201,7 +198,7 @@ struct ShopView: View {
                         .stroke(AppColors.grayDark.opacity(0.5), lineWidth: 1)
                 )
             }
-            
+
             // Filter button
             Button(action: { showFilter = true }) {
                 HStack(spacing: 4) {
@@ -209,7 +206,7 @@ struct ShopView: View {
                         .font(.system(size: 11))
                     Text("Filter")
                         .font(.caption)
-                    
+
                     if viewModel.activeFilterCount > 0 {
                         Text("\(viewModel.activeFilterCount)")
                             .font(.system(size: 9, weight: .bold))
@@ -236,9 +233,9 @@ struct ShopView: View {
         }
         .padding(.horizontal, 20)
     }
-    
+
     // MARK: - Product Grid
-    
+
     private var productGrid: some View {
         Group {
             if viewModel.filteredProducts.isEmpty {
@@ -247,11 +244,11 @@ struct ShopView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 40, weight: .light))
                         .foregroundStyle(AppColors.gold.opacity(0.3))
-                    
+
                     Text("No products found")
                         .font(.subheadline)
                         .foregroundStyle(AppColors.grayLight)
-                    
+
                     Button(action: { viewModel.resetFilters() }) {
                         Text("Clear Filters")
                             .font(.caption)

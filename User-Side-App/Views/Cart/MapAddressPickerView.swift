@@ -1,10 +1,7 @@
-//
 //  MapAddressPickerView.swift
 //  User-Side-App
-//
 //  Interactive MapKit view for precise delivery location selection
 //  Includes Real-Time Address Search and Structured Field Extraction
-//
 
 import SwiftUI
 import MapKit
@@ -19,7 +16,7 @@ struct StructuredAddress {
     var state: String = ""
     var pincode: String = ""
     var country: String = "India"
-    
+
     var fullAddress: String {
         let parts = [buildingName, areaStreet, landmark, city, state, pincode]
             .filter { !$0.isEmpty }
@@ -30,10 +27,10 @@ struct StructuredAddress {
 struct MapAddressPickerView: View {
     let onSave: (StructuredAddress) -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     // CoreLocation Geocoder
     private let geocoder = CLGeocoder()
-    
+
     // Default coordinates (e.g., Mumbai)
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -41,19 +38,19 @@ struct MapAddressPickerView: View {
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )
     )
-    
+
     @State private var centerCoordinate: CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 19.0760, longitude: 72.8777)
-    
+
     // Search State
     @StateObject private var searchManager = AddressSearchManager()
     @State private var searchText: String = ""
     @FocusState private var isSearchFocused: Bool
-    
+
     // UI State
     @State private var isDragging: Bool = false
     @State private var isLocating: Bool = false
     @State private var currentAddress = StructuredAddress()
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
@@ -72,7 +69,7 @@ struct MapAddressPickerView: View {
                         reverseGeocode(coordinate: centerCoordinate)
                     }
                     .ignoresSafeArea()
-                    
+
                     // MARK: - Center Pin
                     VStack(spacing: 0) {
                         Image(systemName: "mappin.circle.fill")
@@ -81,7 +78,7 @@ struct MapAddressPickerView: View {
                             .background(Circle().fill(.white))
                             .offset(y: isDragging ? -15 : 0)
                             .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isDragging)
-                        
+
                         Ellipse()
                             .fill(Color.black.opacity(0.3))
                             .frame(width: 14, height: 4)
@@ -90,7 +87,7 @@ struct MapAddressPickerView: View {
                             .animation(.spring(response: 0.3), value: isDragging)
                     }
                     .padding(.bottom, 36)
-                    
+
                     // MARK: - Bottom Sheet Card
                     VStack(spacing: 16) {
                         // Preview
@@ -100,7 +97,7 @@ struct MapAddressPickerView: View {
                                 .foregroundStyle(AppColors.gold)
                                 .rotationEffect(.degrees(isLocating ? 360 : 0))
                                 .animation(isLocating ? .linear(duration: 1).repeatForever(autoreverses: false) : .default, value: isLocating)
-                            
+
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Delivery Landmark").font(.caption).fontWeight(.bold).tracking(2).foregroundStyle(AppColors.grayLight)
                                 Text(currentAddress.fullAddress.isEmpty ? "Locating..." : currentAddress.fullAddress)
@@ -111,17 +108,17 @@ struct MapAddressPickerView: View {
                             }
                             Spacer()
                         }
-                        
+
                         // Structured Inputs
                         VStack(spacing: 12) {
                             HStack(spacing: 12) {
                                 customField(label: "BLDG / SUITE", text: $currentAddress.buildingName)
                                 customField(label: "PINCODE", text: $currentAddress.pincode)
                             }
-                            
+
                             customField(label: "LANDMARK (OPTIONAL)", text: $currentAddress.landmark)
                         }
-                        
+
                         Button(action: {
                             if !currentAddress.city.isEmpty {
                                 onSave(currentAddress)
@@ -144,7 +141,7 @@ struct MapAddressPickerView: View {
                     .offset(y: isSearchFocused ? 300 : 0)
                     .animation(.spring(), value: isSearchFocused)
                 }
-                
+
                 // MARK: - Search Bar & Results Overlay
                 addressSearchBar
             }
@@ -163,7 +160,7 @@ struct MapAddressPickerView: View {
             reverseGeocode(coordinate: centerCoordinate)
         }
     }
-    
+
     private func customField(label: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label).font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(AppColors.grayLight)
@@ -176,7 +173,7 @@ struct MapAddressPickerView: View {
                 .font(.subheadline)
         }
     }
-    
+
     private var addressSearchBar: some View {
         VStack(spacing: 0) {
             HStack {
@@ -187,7 +184,7 @@ struct MapAddressPickerView: View {
                     .onChange(of: searchText) { _, newValue in
                         searchManager.searchQuery = newValue
                     }
-                
+
                 if !searchText.isEmpty {
                     Button(action: { searchText = ""; searchManager.results = [] }) {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(AppColors.grayLight)
@@ -199,7 +196,7 @@ struct MapAddressPickerView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(isSearchFocused ? AppColors.gold : AppColors.grayDark.opacity(0.3), lineWidth: 1))
             .padding(16)
-            
+
             if isSearchFocused && !searchManager.results.isEmpty {
                 ScrollView {
                     VStack(spacing: 0) {
@@ -224,19 +221,19 @@ struct MapAddressPickerView: View {
             }
         }
     }
-    
+
     // MARK: - Logic
-    
+
     private func selectSearchResult(_ result: MKLocalSearchCompletion) {
         isSearchFocused = false
         searchText = result.title
-        
+
         let searchRequest = MKLocalSearch.Request(completion: result)
         let search = MKLocalSearch(request: searchRequest)
-        
+
         search.start { response, error in
             guard let coordinate = response?.mapItems.first?.placemark.coordinate else { return }
-            
+
             withAnimation(.spring()) {
                 self.position = .region(MKCoordinateRegion(
                     center: coordinate,
@@ -247,15 +244,15 @@ struct MapAddressPickerView: View {
             reverseGeocode(coordinate: coordinate)
         }
     }
-    
+
     private func reverseGeocode(coordinate: CLLocationCoordinate2D) {
         isLocating = true
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        
+
         geocoder.reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "en_US")) { placemarks, error in
             isLocating = false
             guard let placemark = placemarks?.first else { return }
-            
+
             withAnimation {
                 self.currentAddress.buildingName = placemark.name ?? ""
                 self.currentAddress.areaStreet = [placemark.subLocality, placemark.thoroughfare].compactMap { $0 }.joined(separator: ", ")

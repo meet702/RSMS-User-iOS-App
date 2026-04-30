@@ -1,10 +1,7 @@
-//
 //  SupabaseDTOs.swift
 //  User-Side-App
-//
 //  Supabase Data Transfer Objects (DTOs) for the DIOR Customer App.
 //  Maps exactly to the Supabase PG schema.
-//
 
 import Foundation
 
@@ -22,7 +19,7 @@ struct ProductDTO: Codable, Sendable {
     let created_at: String?
     let review_count: Int?
     let rating: Double?
-    
+
     func toProduct() -> Product {
         Product(
             id: id,
@@ -46,7 +43,7 @@ struct ProductDTO: Codable, Sendable {
 struct CategoryDTO: Codable, Sendable {
     let id: UUID
     let name: String
-    
+
     func toCategory() -> Category {
         Category(
             id: id,
@@ -56,7 +53,7 @@ struct CategoryDTO: Codable, Sendable {
             productCount: 0
         )
     }
-    
+
     private static func iconFor(_ name: String) -> String {
         let n = name.lowercased()
         switch n {
@@ -95,7 +92,7 @@ struct WishlistItemDTO: Codable, Sendable {
     let user_id: UUID
     let product_id: UUID
     let created_at: String?
-    
+
     // Joined product data
     let products: ProductDTO?
 }
@@ -108,7 +105,7 @@ struct CartItemDTO: Codable, Sendable {
     let variant: String?
     let quantity: Int
     let created_at: String?
-    
+
     // Joined product data
     var products: ProductDTO?
 }
@@ -126,7 +123,7 @@ struct OrderInsertDTO: Codable, Sendable {
     let shipping_address: String?
     let payment_method: String?
     let estimated_delivery: String?
-    
+
     // Loyalty Points
     let points_earned: Int
     let points_redeemed: Int
@@ -158,13 +155,13 @@ struct OrderDTO: Codable, Sendable {
     let payment_method: String?
     let estimated_delivery: String?
     let created_at: String?
-    
+
     // Loyalty Points
     let points_earned: Int?
     let points_redeemed: Int?
     let offer_id: UUID?
     let discount_amount: Double?
-    
+
     // Joined items
     let customer_order_items: [OrderItemDTO]?
 }
@@ -197,7 +194,7 @@ struct AddressDTO: Codable, Sendable, Identifiable {
     let id: UUID
     let user_id: UUID
     let label: String?
-    
+
     // Structured Fields
     let building_name: String?
     let area_street: String?
@@ -206,7 +203,7 @@ struct AddressDTO: Codable, Sendable, Identifiable {
     let state: String?
     let pincode: String?
     let country: String?
-    
+
     let full_address: String
     let is_default: Bool
     let created_at: String?
@@ -249,9 +246,7 @@ struct StoreDTO: Codable, Sendable, Identifiable, Hashable {
     let city: String
 }
 
-// MARK: - Tax Rule DTO
-
-/// Matches the `tax_rules` table — admin-configured tax per category (from Group5 RSMS model)
+/// Matches the `tax_rules` table  admin-configured tax per category (from Group5 RSMS model)
 struct TaxRuleDTO: Codable, Sendable, Identifiable {
     let id: UUID
     let category: String?

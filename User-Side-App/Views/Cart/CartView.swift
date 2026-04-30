@@ -1,9 +1,6 @@
-//
 //  CartView.swift
 //  User-Side-App
-//
-//  Cart tab placeholder — Phase 3
-//
+//  Cart tab placeholder  Phase 3
 
 import SwiftUI
 
@@ -11,18 +8,18 @@ struct CartView: View {
     @Environment(CartManager.self) private var cartManager
     @Environment(UserManager.self) private var userManager
     @State private var showCheckout = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 AppColors.background.ignoresSafeArea()
-                
+
                 if cartManager.items.isEmpty {
                     emptyCartView
                 } else {
                     cartContent
                 }
-                
+
                 if !cartManager.items.isEmpty {
                     checkoutFooter
                 }
@@ -43,9 +40,9 @@ struct CartView: View {
             }
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyCartView: some View {
         VStack {
             Spacer()
@@ -61,7 +58,7 @@ struct CartView: View {
                         .font(.system(size: 44, weight: .ultraLight))
                         .foregroundStyle(LinearGradient.goldSubtle)
                 }
-                
+
                 VStack(spacing: 10) {
                     Text("Your bag is empty")
                         .font(.title3).fontWeight(.bold)
@@ -70,7 +67,7 @@ struct CartView: View {
                         .font(.subheadline).foregroundStyle(AppColors.grayLight)
                         .multilineTextAlignment(.center).lineSpacing(4)
                 }
-                
+
                 Rectangle()
                     .fill(LinearGradient(colors: [.clear, AppColors.gold.opacity(0.4), .clear],
                                         startPoint: .leading, endPoint: .trailing))
@@ -80,9 +77,9 @@ struct CartView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-    
+
     // MARK: - Cart Content
-    
+
     private var cartContent: some View {
         List {
             ForEach(cartManager.items) { item in
@@ -96,7 +93,7 @@ struct CartView: View {
                     cartManager.removeFromCart(item: cartManager.items[index], userId: userManager.supabaseUserId)
                 }
             }
-            
+
             // Extra space for footer
             Color.clear.frame(height: 180)
                 .listRowBackground(Color.clear)
@@ -105,9 +102,9 @@ struct CartView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
     }
-    
+
     // MARK: - Checkout Footer
-    
+
     private var checkoutFooter: some View {
         VStack(spacing: 20) {
             VStack(spacing: 12) {
@@ -121,11 +118,11 @@ struct CartView: View {
                         .fontWeight(.medium)
                         .foregroundStyle(AppColors.pureWhite)
                 }
-                
+
                 Rectangle()
                     .fill(AppColors.grayDark.opacity(0.3))
                     .frame(height: 0.5)
-                
+
                 HStack {
                     Text("Estimated Total")
                         .font(.headline)
@@ -140,7 +137,7 @@ struct CartView: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Subtotal: \(cartManager.subtotal.formattedPrice). Estimated Total: \(cartManager.subtotal.formattedPrice)")
-            
+
             // Checkout button
             Button(action: { showCheckout = true }) {
                 Text("PROCEED TO CHECKOUT")
@@ -175,28 +172,28 @@ struct CartItemRow: View {
     let item: CartItem
     @Environment(CartManager.self) private var cartManager
     @Environment(UserManager.self) private var userManager
-    
+
     var body: some View {
         HStack(spacing: 16) {
-            // Product Image — AsyncProductImage handles URL + fallback
+            // Product Image  AsyncProductImage handles URL + fallback
             AsyncProductImage(product: item.product)
                 .frame(width: 90, height: 110)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .goldBorder(cornerRadius: 12)
-            
+
             // Item Info
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.product.brand)
                     .font(.system(size: 10, weight: .bold))
                     .tracking(1.5)
                     .foregroundStyle(AppColors.gold)
-                
+
                 Text(item.product.name)
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .foregroundStyle(AppColors.pureWhite)
                     .lineLimit(1)
-                
+
                 if let variant = item.variant {
                     Text(variant)
                         .font(.caption2)
@@ -206,17 +203,17 @@ struct CartItemRow: View {
                         .background(AppColors.grayDark.opacity(0.3))
                         .clipShape(Capsule())
                 }
-                
+
                 Spacer()
-                
+
                 HStack(alignment: .bottom) {
                     Text((item.product.price * Double(item.quantity)).formattedPrice)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .foregroundStyle(AppColors.gold)
-                    
+
                     Spacer()
-                    
+
                     // Quantity management
                     HStack(spacing: 12) {
                         Button(action: {
@@ -231,13 +228,13 @@ struct CartItemRow: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(item.quantity == 1 ? "Remove item" : "Decrease quantity")
-                        
+
                         Text("\(item.quantity)")
                             .font(.subheadline)
                             .fontWeight(.bold)
                             .foregroundStyle(AppColors.pureWhite)
                             .frame(minWidth: 20)
-                        
+
                         Button(action: {
                             cartManager.updateQuantity(for: item, quantity: item.quantity + 1, userId: userManager.supabaseUserId)
                         }) {
@@ -267,7 +264,6 @@ struct CartItemRow: View {
                 .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
         )
     }
-    
 
 }
 
