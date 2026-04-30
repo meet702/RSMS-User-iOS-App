@@ -244,13 +244,26 @@ class SyncManager {
             .value
     }
     
+    /// Fetches only the `status` field for a single order — lightweight live-check before cancel.
+    func fetchOrderStatus(orderId: UUID) async throws -> String? {
+        struct StatusOnly: Decodable { let status: String }
+        let rows: [StatusOnly] = try await client
+            .from("customer_orders")
+            .select("status")
+            .eq("id", value: orderId)
+            .limit(1)
+            .execute()
+            .value
+        return rows.first?.status
+    }
+
     func cancelOrder(orderId: UUID) async throws {
         struct UpdateStatus: Encodable {
             let status: String
         }
         try await client
             .from("customer_orders")
-            .update(UpdateStatus(status: "Cancelled"))
+            .update(UpdateStatus(status: "cancelled"))
             .eq("id", value: orderId)
             .execute()
     }
@@ -275,6 +288,8 @@ class SyncManager {
             let points_earned: Int
             let points_redeemed: Int
             let discount_amount: Double
+            let total_amount: Double
+            let offer_id: UUID?
         }
         
         struct ItemDict: Encodable {
@@ -300,7 +315,9 @@ class SyncManager {
             estimated_delivery: order.estimated_delivery ?? "",
             points_earned: order.points_earned,
             points_redeemed: order.points_redeemed,
-            discount_amount: order.discount_amount
+            discount_amount: order.discount_amount,
+            total_amount: order.subtotal + order.taxes + order.delivery_fee - order.discount_amount,
+            offer_id: order.offer_id
         )
         
         let itemDicts = items.map { item in

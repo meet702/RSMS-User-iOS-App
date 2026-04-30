@@ -12,13 +12,21 @@ class RazorpayManager: NSObject {
     private var razorpay: RazorpayCheckout?
     @MainActor private var onSuccess: ((String) -> Void)?
     @MainActor private var onFailure: ((String) -> Void)?
+    private static var isInitialized = false
     
     override init() {
         super.init()
+        // Initialize once during startup on the main thread
         DispatchQueue.main.async {
+            self.ensureInitialized()
+        }
+    }
+    
+    private func ensureInitialized() {
+        if !Self.isInitialized {
             self.razorpay = RazorpayCheckout.initWithKey(self.razorpayKey, andDelegateWithData: self)
-            // Debug check for GPay/UPI integration
-            RazorpayCheckout.checkIntegration(withMerchantKey: self.razorpayKey)
+            Self.isInitialized = true
+            print("💳 RazorpayManager: Strictly Initialized once with key \(self.razorpayKey)")
         }
     }
     
@@ -46,9 +54,7 @@ class RazorpayManager: NSObject {
         // CRITICAL DEBUG: Print the exact options being sent
         print("DEBUG PAYMENT OPTIONS: \(options)")
         
-        if self.razorpay == nil {
-            self.razorpay = RazorpayCheckout.initWithKey(self.razorpayKey, andDelegateWithData: self)
-        }
+        ensureInitialized()
         
         if let topController = getTopViewController() {
             razorpay?.open(options, displayController: topController)

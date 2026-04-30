@@ -67,13 +67,11 @@ struct OrderSuccessView: View {
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .tracking(2)
-                        .foregroundStyle(AppColors.gold)
+                        .foregroundStyle(AppColors.background)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(AppColors.gold, lineWidth: 1.5)
-                        )
+                        .background(LinearGradient.goldSubtle)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 50)

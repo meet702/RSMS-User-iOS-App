@@ -9,10 +9,12 @@ import SwiftUI
 
 struct OrderTrackingView: View {
     let order: Order
-    let onCancel: () async -> Void
+    let onCancel: () async throws -> Void
     @Environment(\.dismiss) private var dismiss
     
     @State private var showCancelPrompt = false
+    @State private var errorAlertMessage: String?
+    @State private var showStatusError = false
     
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -62,12 +64,32 @@ struct OrderTrackingView: View {
             Button("No, keep it", role: .cancel) { }
             Button("Yes, Cancel", role: .destructive) {
                 Task {
-                    await onCancel()
-                    dismiss()
+                    do {
+                        try await onCancel()
+                        dismiss()
+                    } catch let error as OrdersManager.OrderCancelError {
+                        switch error {
+                        case .alreadyShipped:
+                            errorAlertMessage = "This order has already been shipped and can no longer be cancelled."
+                        case .alreadyDelivered:
+                            errorAlertMessage = "This order has already been delivered."
+                        case .notFound:
+                            errorAlertMessage = "Order details could not be found."
+                        }
+                        showStatusError = true
+                    } catch {
+                        errorAlertMessage = "Failed to cancel order. Please try again."
+                        showStatusError = true
+                    }
                 }
             }
         } message: {
             Text("Are you sure you want to cancel this order? This action cannot be undone.")
+        }
+        .alert("Cannot Cancel", isPresented: $showStatusError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorAlertMessage ?? "Something went wrong.")
         }
     }
     

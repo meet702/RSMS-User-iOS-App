@@ -43,9 +43,22 @@ struct LoginView: View {
                     
                     HStack {
                         Spacer()
-                        Button("Forgot Password?") { }
-                            .font(.caption)
-                            .foregroundStyle(AppColors.gold)
+                        Button("Forgot Password?") {
+                            if email.isEmpty {
+                                userManager.authError = "Please enter your email first"
+                            } else {
+                                Task {
+                                    do {
+                                        try await userManager.resetPassword(email: email)
+                                        userManager.authError = "Check your email for reset instructions"
+                                    } catch {
+                                        // Error handled by UserManager
+                                    }
+                                }
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(AppColors.gold)
                     }
                     .padding(.top, -8)
                 }
@@ -137,24 +150,6 @@ struct LoginView: View {
                 }
                 .disabled(userManager.isLoading)
                 .padding(.horizontal, 30)
-                .opacity(animateContent ? 1 : 0)
-                
-                // ── DEV BYPASS ── remove before release
-                Button(action: { userManager.login() }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt.fill")
-                            .font(.system(size: 10))
-                        Text("Dev · Skip Login")
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(AppColors.gold.opacity(0.5))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .overlay(
-                        Capsule()
-                            .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)
-                    )
-                }
                 .opacity(animateContent ? 1 : 0)
                 
                 Spacer()

@@ -114,7 +114,8 @@ class OrdersManager {
                     status: currentStatus,
                     trackingSteps: generatedSteps,
                     estimatedDelivery: formatter.date(from: dto.estimated_delivery ?? "") ?? 
-                                       ISO8601DateFormatter().date(from: dto.estimated_delivery ?? "")
+                                       ISO8601DateFormatter().date(from: dto.estimated_delivery ?? ""),
+                    offer_id: dto.offer_id
                 )
             }
         } catch {
@@ -176,6 +177,7 @@ class OrdersManager {
                     userId: UUID, 
                     redeemedPoints: Int = 0, 
                     offerDiscount: Double = 0.0,
+                    offerId: UUID? = nil,
                     shippingAddress: String, 
                     paymentMethod: String,
                     storeId: UUID) async throws {
@@ -201,7 +203,7 @@ class OrdersManager {
         let orderInsert = OrderInsertDTO(
             user_id: userId,
             order_number: orderNumber,
-            status: "Order Placed",
+            status: "placed",
             subtotal: subtotal,
             taxes: taxes,
             delivery_fee: deliveryFee,
@@ -210,7 +212,8 @@ class OrdersManager {
             estimated_delivery: etaString,
             points_earned: earnedPoints,
             points_redeemed: redeemedPoints,
-            discount_amount: discount
+            discount_amount: discount,
+            offer_id: offerId
         )
         
         // Prepare Item DTOs
@@ -272,26 +275,47 @@ class OrdersManager {
     
     // MARK: - Cancel
     
-    func cancelOrder(_ orderID: UUID) async {
-        guard let index = orders.firstIndex(where: { $0.id == orderID }) else { return }
+    enum OrderCancelError: Error {
+        case alreadyShipped
+        case alreadyDelivered
+        case notFound
+    }
+    
+    /// Performs a live status check before cancelling.
+    /// Throws `OrderCancelError.alreadyShipped` if the admin already marked the order as shipped.
+    func cancelOrder(_ orderID: UUID) async throws {
+        // 1. Live status check — catches the race window where admin shipped it
+        //    while the user still had the "Cancel" button visible from a stale snapshot.
+        let liveStatus = try await SyncManager.shared.fetchOrderStatus(orderId: orderID)
         
-        // Optimistic UI update
+        switch liveStatus {
+        case "shipped":
+            throw OrderCancelError.alreadyShipped
+        case "delivered":
+            throw OrderCancelError.alreadyDelivered
+        case .none:
+            throw OrderCancelError.notFound
+        default:
+            break // "placed" or anything else → safe to cancel
+        }
+        
+        // 2. Optimistic UI update
+        guard let index = orders.firstIndex(where: { $0.id == orderID }) else { return }
         withAnimation {
             orders[index].status = .cancelled
         }
         
-        // Push update to backend
+        // 3. Push update to backend
         do {
             try await SyncManager.shared.cancelOrder(orderId: orderID)
             print("✅ Successfully cancelled order in database")
-            
-            // Reload from source to ensure everything is perfectly synced
-            if let userId = orders.first?.items.first?.product.id { // Fallback, will reload based on logged in user anyway
-                // Actually better to use the reliable userId from OrdersManager if we had it, 
-                // but loadOrders usually takes it as an argument.
-            }
         } catch {
+            // Rollback optimistic update on failure
+            withAnimation {
+                orders[index].status = .placed
+            }
             print("❌ Failed to cancel order in database: \(error)")
+            throw error
         }
     }
     

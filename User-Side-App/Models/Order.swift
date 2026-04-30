@@ -8,10 +8,10 @@
 import Foundation
 
 enum OrderStatus: String, CaseIterable, Codable, Sendable {
-    case placed = "Order Placed"
-    case shipped = "Shipped"
-    case delivered = "Delivered"
-    case cancelled = "Cancelled"
+    case placed = "placed"
+    case shipped = "shipped"
+    case delivered = "delivered"
+    case cancelled = "cancelled"
     
     var isActive: Bool {
         return self == .placed || self == .shipped
@@ -67,6 +67,7 @@ struct Order: Identifiable, Hashable, Sendable {
     let subtotal: Double
     let taxes: Double
     let deliveryFee: Double
+    let offer_id: UUID?
     var finalTotal: Double {
         subtotal + taxes + deliveryFee
     }
@@ -85,7 +86,8 @@ struct Order: Identifiable, Hashable, Sendable {
         deliveryFee: Double = 0,
         status: OrderStatus,
         trackingSteps: [TrackingStep] = [],
-        estimatedDelivery: Date? = nil
+        estimatedDelivery: Date? = nil,
+        offer_id: UUID? = nil
     ) {
         self.id = id
         self.orderNumber = orderNumber
@@ -97,5 +99,6 @@ struct Order: Identifiable, Hashable, Sendable {
         self.status = status
         self.trackingSteps = trackingSteps
         self.estimatedDelivery = estimatedDelivery
+        self.offer_id = offer_id
     }
 }

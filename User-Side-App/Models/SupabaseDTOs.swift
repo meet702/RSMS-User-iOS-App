@@ -131,6 +131,7 @@ struct OrderInsertDTO: Codable, Sendable {
     let points_earned: Int
     let points_redeemed: Int
     let discount_amount: Double
+    let offer_id: UUID?
 }
 
 /// For inserting into `customer_order_items`
@@ -161,6 +162,7 @@ struct OrderDTO: Codable, Sendable {
     // Loyalty Points
     let points_earned: Int?
     let points_redeemed: Int?
+    let offer_id: UUID?
     let discount_amount: Double?
     
     // Joined items

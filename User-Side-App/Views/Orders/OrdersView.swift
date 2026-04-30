@@ -74,7 +74,7 @@ struct OrdersView: View {
             }
             .navigationDestination(for: Order.self) { order in
                 OrderTrackingView(order: order) {
-                    await ordersManager.cancelOrder(order.id)
+                    try await ordersManager.cancelOrder(order.id)
                     // Auto-switch to past tab to show the cancelled order landing
                     withAnimation(.easeInOut) {
                         selectedTab = .past

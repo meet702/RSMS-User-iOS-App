@@ -552,6 +552,7 @@ struct CheckoutView: View {
                 userId: userId, 
                 redeemedPoints: 0,
                 offerDiscount: offerDiscount,
+                offerId: selectedOffer?.id,
                 shippingAddress: shippingAddress,
                 paymentMethod: selectedPayment,
                 storeId: storeId

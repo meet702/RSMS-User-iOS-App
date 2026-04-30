@@ -186,10 +186,6 @@ struct ProfileView: View {
             
             appearanceSection
             
-            menuGroup(title: "SUPPORT") {
-                ProfileMenuRow(icon: "questionmark.circle.fill", title: "Help Center", destination: .helpCenter)
-                ProfileMenuRow(icon: "phone.fill", title: "Contact Support", destination: .contactUs)
-            }
         }
         .padding(.horizontal, 20)
     }
@@ -244,7 +240,6 @@ struct ProfileView: View {
 
 enum ProfileDestination: Hashable {
     case orderHistory, shippingAddresses
-    case helpCenter, contactUs
     
     @ViewBuilder
     func view(navManager: NavigationManager) -> some View {
@@ -307,8 +302,6 @@ extension ProfileDestination {
         switch self {
         case .orderHistory:       return "My Orders"
         case .shippingAddresses:  return "Saved Addresses"
-        case .helpCenter:         return "Help Center"
-        case .contactUs:          return "Contact Support"
         }
     }
     
@@ -316,8 +309,6 @@ extension ProfileDestination {
         switch self {
         case .orderHistory:       return "bag.fill"
         case .shippingAddresses:  return "mappin.and.ellipse"
-        case .helpCenter:         return "questionmark.circle.fill"
-        case .contactUs:          return "phone.fill"
         }
     }
 }

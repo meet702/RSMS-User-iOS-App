@@ -175,6 +175,22 @@ class UserManager {
         }
     }
     
+    func resetPassword(email: String) async throws {
+        isLoading = true
+        authError = nil
+        do {
+            try await SupabaseManager.shared.client.auth.resetPasswordForEmail(
+                email,
+                redirectTo: URL(string: "dior-customer://auth/reset-password")
+            )
+            isLoading = false
+        } catch {
+            authError = error.localizedDescription
+            isLoading = false
+            throw error
+        }
+    }
+    
     // MARK: - Dev Skip Login (for development only)
     
     func login() {
