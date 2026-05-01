@@ -193,7 +193,7 @@ struct ProductDetailView: View {
                 .tracking(3)
                 .foregroundStyle(AppColors.gold)
             
-            Text(product.name)
+            Text(LocalizedStringKey(product.name))
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(AppColors.pureWhite)
@@ -315,7 +315,7 @@ struct ProductDetailView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(AppColors.pureWhite)
             
-            Text(product.description)
+            Text(LocalizedStringKey(product.description))
                 .font(.subheadline)
                 .foregroundStyle(AppColors.grayLight)
                 .lineSpacing(4)

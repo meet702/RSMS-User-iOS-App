@@ -10,11 +10,21 @@ import SwiftUI
 struct AppointmentSheet: View {
     @Environment(UserManager.self) private var userManager
     @Environment(\.dismiss) private var dismiss
+    
     @State private var selectedDate = Date()
     @State private var note = ""
     @State private var isBooked = false
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
+    
+    // Store Selection
+    @State private var availableStores: [StoreDTO] = []
+    @State private var selectedStoreId: UUID? = nil
+    @State private var showStorePicker = false
+    
+    private var selectedStore: StoreDTO? {
+        availableStores.first(where: { $0.id == selectedStoreId })
+    }
     
     var body: some View {
         NavigationStack {
@@ -35,6 +45,13 @@ struct AppointmentSheet: View {
                         .foregroundStyle(AppColors.gold)
                 }
             }
+            .sheet(isPresented: $showStorePicker) {
+                StorePickerSheet(stores: availableStores, selectedId: $selectedStoreId)
+                    .presentationDetents([.medium])
+            }
+            .task {
+                await loadStores()
+            }
         }
     }
     
@@ -50,6 +67,42 @@ struct AppointmentSheet: View {
                     Text("Book a personal consultation with our boutique experts.")
                         .font(.subheadline)
                         .foregroundStyle(AppColors.grayLight)
+                }
+                
+                // Boutique Selection
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("SELECT BOUTIQUE")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .tracking(2)
+                        .foregroundStyle(AppColors.grayMedium)
+                    
+                    Button(action: { showStorePicker = true }) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                if let store = selectedStore {
+                                    Text(store.name)
+                                        .font(.subheadline).fontWeight(.bold)
+                                        .foregroundStyle(AppColors.pureWhite)
+                                    Text(store.city)
+                                        .font(.caption)
+                                        .foregroundStyle(AppColors.gold)
+                                } else {
+                                    Text("Choose a location")
+                                        .font(.subheadline)
+                                        .foregroundStyle(AppColors.grayMedium)
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(AppColors.gold)
+                        }
+                        .padding(16)
+                        .background(AppColors.surfaceDark)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                    }
+                    .buttonStyle(.plain)
                 }
                 
                 // Date Picker
@@ -104,10 +157,10 @@ struct AppointmentSheet: View {
                     .foregroundStyle(AppColors.background)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(LinearGradient.goldSubtle)
+                    .background(LinearGradient.goldSubtle.opacity(selectedStoreId == nil || isLoading ? 0.5 : 1.0))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .disabled(isLoading)
+                .disabled(isLoading || selectedStoreId == nil)
                 
                 if let error = errorMessage {
                     Text(error)
@@ -139,6 +192,12 @@ struct AppointmentSheet: View {
                     .fontWeight(.bold)
                     .foregroundStyle(AppColors.gold)
                 
+                if let store = selectedStore {
+                    Text("At \(store.name), \(store.city)")
+                        .font(.caption)
+                        .foregroundStyle(AppColors.goldLight)
+                }
+                
                 Text("We look forward to welcoming you to our boutique.")
                     .font(.subheadline)
                     .foregroundStyle(AppColors.grayLight)
@@ -150,6 +209,21 @@ struct AppointmentSheet: View {
                 .fontWeight(.bold)
                 .foregroundStyle(AppColors.gold)
                 .padding(.top, 20)
+        }
+    }
+    
+    private func loadStores() async {
+        do {
+            let fetched = try await SyncManager.shared.fetchStores()
+            await MainActor.run {
+                self.availableStores = fetched
+                // Pre-select first store if none selected
+                if self.selectedStoreId == nil {
+                    self.selectedStoreId = fetched.first?.id
+                }
+            }
+        } catch {
+            print("Failed to load stores: \(error)")
         }
     }
     
@@ -167,15 +241,21 @@ struct AppointmentSheet: View {
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             let dateString = formatter.string(from: selectedDate)
             
+            // Build DTO
             let dto = AppointmentDTO(
                 user_id: userId,
                 appointment_date: dateString,
                 notes: note.isEmpty ? nil : note,
-                status: "pending"
+                status: "pending",
+                store_id: selectedStoreId
             )
             
+            // Get profile for VIP sync
+            let profile = try? await SyncManager.shared.fetchProfile(userId: userId)
+            
+            // Call SyncManager
             do {
-                try await SyncManager.shared.bookAppointment(dto: dto)
+                try await SyncManager.shared.bookAppointment(dto: dto, profile: profile)
                 await MainActor.run {
                     withAnimation {
                         isBooked = true

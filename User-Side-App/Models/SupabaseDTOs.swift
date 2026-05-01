@@ -236,6 +236,7 @@ struct AppointmentDTO: Codable, Sendable {
     let appointment_date: String
     let notes: String?
     let status: String
+    let store_id: UUID?
 }
 
 // MARK: - Store DTO

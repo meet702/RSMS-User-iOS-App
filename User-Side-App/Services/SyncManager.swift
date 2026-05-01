@@ -374,11 +374,84 @@ class SyncManager {
     
     // MARK: - Appointment Operations
     
-    func bookAppointment(dto: AppointmentDTO) async throws {
+    func bookAppointment(dto: AppointmentDTO, profile: ProfileDTO? = nil) async throws {
+        // 1. Standard Write (for Customer's "My Appointments")
         try await client
             .from("customer_appointments")
             .insert(dto)
             .execute()
+            
+        // 2. VIP Cross-Sync (for Staff App "VIP & Events" Tab)
+        if let profile = profile, let storeId = dto.store_id {
+            try? await syncToVIPSystem(dto: dto, profile: profile, storeId: storeId)
+        }
+    }
+    
+    /// Ensures the customer is in the VIP Guest directory and creates a VIP Appointment entry.
+    private func syncToVIPSystem(dto: AppointmentDTO, profile: ProfileDTO, storeId: UUID) async throws {
+        print("📡 Syncing to VIP System: User=\(profile.id), Store=\(storeId)")
+        
+        // A. Ensure guest exists in vip_guests directory
+        struct VIPGuestInsert: Encodable {
+            let id: UUID
+            let boutique_id: UUID
+            let full_name: String
+            let email: String?
+            let phone: String?
+            let preferences: String?
+        }
+        
+        let guestData = VIPGuestInsert(
+            id: profile.id,
+            boutique_id: storeId,
+            full_name: "\(profile.first_name) \(profile.last_name)",
+            email: profile.email,
+            phone: profile.phone,
+            preferences: dto.notes
+        )
+        
+        do {
+            try await client
+                .from("vip_guests")
+                .upsert(guestData, onConflict: "id") // Explicitly use ID for conflict resolution
+                .execute()
+            print("✅ VIP Guest synced")
+        } catch {
+            print("⚠️ VIP Guest sync failed: \(error.localizedDescription)")
+            // Continue even if guest sync fails, as they might already exist
+        }
+            
+        // B. Create the VIP Appointment entry
+        struct VIPAppointmentInsert: Encodable {
+            let guest_id: UUID
+            let boutique_id: UUID
+            let title: String?
+            let appointment_date: String
+            let type: String
+            let status: String
+            let notes: String?
+        }
+        
+        let apptData = VIPAppointmentInsert(
+            guest_id: profile.id,
+            boutique_id: storeId,
+            title: "Boutique Visit",
+            appointment_date: dto.appointment_date,
+            type: "In-Store Styling",
+            status: "scheduled",
+            notes: dto.notes
+        )
+        
+        do {
+            try await client
+                .from("vip_appointments")
+                .insert(apptData)
+                .execute()
+            print("✅ VIP Appointment synced")
+        } catch {
+            print("❌ VIP Appointment sync failed: \(error.localizedDescription)")
+            throw error // Throwing here will let us see the error in the UI
+        }
     }
 
     // MARK: - Review Operations

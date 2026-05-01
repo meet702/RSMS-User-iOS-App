@@ -53,7 +53,7 @@ struct ProductCardHorizontal: View {
                 Text(product.brand)
                     .font(.system(size: 10, weight: .semibold)).tracking(2)
                     .foregroundStyle(AppColors.gold)
-                Text(product.name)
+                Text(LocalizedStringKey(product.name))
                     .font(.subheadline).fontWeight(.medium)
                     .foregroundStyle(AppColors.pureWhite).lineLimit(1)
                 HStack(spacing: 6) {
@@ -105,7 +105,7 @@ struct ProductCardGrid: View {
                 Text(product.brand)
                     .font(.system(size: 9, weight: .semibold)).tracking(1.5)
                     .foregroundStyle(AppColors.gold)
-                Text(product.name)
+                Text(LocalizedStringKey(product.name))
                     .font(.caption).fontWeight(.medium)
                     .foregroundStyle(AppColors.pureWhite).lineLimit(1)
                 HStack(spacing: 4) {

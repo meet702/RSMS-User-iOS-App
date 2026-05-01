@@ -209,6 +209,25 @@ struct ProfileView: View {
                 .pickerStyle(.menu).accentColor(AppColors.gold)
             }
             .padding(.horizontal, 16).padding(.vertical, 10)
+            
+            Divider().background(AppColors.grayDark.opacity(0.3)).padding(.leading, 56)
+            
+            Button(action: {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }) {
+                HStack(spacing: 16) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 18)).foregroundStyle(AppColors.gold.opacity(0.8)).frame(width: 24)
+                    Text("Language & Region").font(.subheadline).foregroundStyle(AppColors.pureWhite)
+                    Spacer()
+                    Image(systemName: "arrow.up.forward.app")
+                        .font(.system(size: 14)).foregroundStyle(AppColors.grayLight)
+                }
+                .padding(.horizontal, 16).padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
         }
     }
     

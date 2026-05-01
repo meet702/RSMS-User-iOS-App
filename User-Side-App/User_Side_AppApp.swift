@@ -35,6 +35,8 @@ struct User_Side_AppApp: App {
                     }
                 }
                 .task {
+                    // Fetch exchange rates
+                    await CurrencyManager.shared.fetchRates()
                     // Restore session on launch
                     await userManager.checkSession()
                 }

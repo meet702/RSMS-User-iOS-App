@@ -190,11 +190,24 @@ extension View {
 
 extension Double {
     var formattedPrice: String {
+        let manager = CurrencyManager.shared
+        let convertedValue = self * manager.currentRate
+        
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencySymbol = "₹"
-        formatter.maximumFractionDigits = 0
-        formatter.locale = Locale(identifier: "en_IN")
-        return formatter.string(from: NSNumber(value: self)) ?? "₹\(Int(self))"
+        formatter.currencySymbol = manager.currentSymbol
+        
+        // Zero decimals for JPY, INR, KRW, etc. Two decimals for USD, EUR, GBP.
+        let zeroDecimalCurrencies = ["INR", "JPY", "KRW", "CLP"]
+        if zeroDecimalCurrencies.contains(manager.currentCurrencyCode) {
+            formatter.maximumFractionDigits = 0
+            formatter.minimumFractionDigits = 0
+        } else {
+            formatter.maximumFractionDigits = 2
+            formatter.minimumFractionDigits = 2
+        }
+        
+        formatter.locale = Locale(identifier: manager.currentLocaleId)
+        return formatter.string(from: NSNumber(value: convertedValue)) ?? "\(manager.currentSymbol)\(convertedValue)"
     }
 }
