@@ -16,6 +16,13 @@ class NavigationManager {
     var showNotifications = false
     var showAppointments = false
     var showProfile = false
+    var showOffers = false
+    var activeOffers: [OfferDTO] = []
+    
+    // Check if any modal is currently visible
+    var isAnyModalShowing: Bool {
+        showNotifications || showAppointments || showProfile || showOffers
+    }
     
     // Transition states — set before switching tabs
     var pendingCategoryFilter: String? = nil

@@ -38,11 +38,19 @@ struct MainTabView: View {
             }
         }
         .tint(AppColors.gold)
+        .blur(radius: navManager.isAnyModalShowing ? 15 : 0)
+        .animation(.easeInOut(duration: 0.35), value: navManager.isAnyModalShowing)
         .sheet(isPresented: Bindable(navManager).showNotifications) {
             NotificationSheet()
         }
         .sheet(isPresented: Bindable(navManager).showAppointments) {
             AppointmentSheet()
+        }
+        .sheet(isPresented: Bindable(navManager).showProfile) {
+            ProfileView()
+        }
+        .sheet(isPresented: Bindable(navManager).showOffers) {
+            OfferSheet(offers: navManager.activeOffers)
         }
     }
 }

@@ -13,65 +13,67 @@ struct HomeView: View {
     @Environment(UserManager.self) private var userManager
     @Environment(NotificationManager.self) private var notificationManager
     @Environment(ThemeManager.self) private var themeManager
-    @State private var showProfile = false
-    @State private var showOffersSheet = false
-    @State private var activeOffers: [OfferDTO] = []
     
     var body: some View {
         NavigationStack {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 28) {
+                    Group {
+                        // MARK: - Header
+                        headerSection
+                        
+                        // MARK: - Search Bar
+                        HomeSearchBar(
+                            searchText: $viewModel.searchText,
+                            products: viewModel.allProducts
+                        )
+                        
+                        // MARK: - Banner Carousel
+                        BannerCarousel(
+                            banners: viewModel.banners,
+                            products: viewModel.allProducts
+                        )
+                        
+                        // MARK: - Categories
+                        CategorySection(
+                            categories: viewModel.categories,
+                            products: viewModel.allProducts
+                        )
+                    }
                     
-                    // MARK: - Header
-                    headerSection
+                    Group {
+                        // Gold divider
+                        goldDivider
+                        
+                        // MARK: - New Arrivals
+                        FeaturedSection(
+                            title: "New Arrivals",
+                            products: viewModel.newArrivals
+                        )
+                        
+                        // MARK: - Featured Collection
+                        FeaturedSection(
+                            title: "Featured Collection",
+                            products: viewModel.featuredProducts
+                        )
+                        
+                        // Gold divider
+                        goldDivider
+                    }
                     
-                    // MARK: - Search Bar
-                    HomeSearchBar(
-                        searchText: $viewModel.searchText,
-                        products: viewModel.allProducts
-                    )
-                    
-                    // MARK: - Banner Carousel
-                    BannerCarousel(
-                        banners: viewModel.banners,
-                        products: viewModel.allProducts
-                    )
-                    
-                    // MARK: - Categories
-                    CategorySection(
-                        categories: viewModel.categories,
-                        products: viewModel.allProducts
-                    )
-                    
-                    // Gold divider
-                    goldDivider
-                    
-                    // MARK: - New Arrivals
-                    FeaturedSection(
-                        title: "New Arrivals",
-                        products: viewModel.newArrivals
-                    )
-                    
-                    // MARK: - Featured Collection
-                    FeaturedSection(
-                        title: "Featured Collection",
-                        products: viewModel.featuredProducts
-                    )
-                    
-                    // Gold divider
-                    goldDivider
-                    
-                    // MARK: - Recommendations
-                    RecommendationSection(products: viewModel.recommendations)
-                    
-                    // MARK: - Offers Banner
-                    offersBanner
-                    
-                    // MARK: - Appointment Teaser
-                    appointmentTeaser
-                    
-                    // Bottom spacing for tab bar
-                    Color.clear.frame(height: 20)
+                    Group {
+                        // MARK: - Recommendations
+                        RecommendationSection(products: viewModel.recommendations)
+                        
+                        // MARK: - Offers Banner
+                        offersBanner
+                        
+                        // MARK: - Appointment Teaser
+                        appointmentTeaser
+                        
+                        // Bottom spacing for tab bar
+                        Color.clear.frame(height: 20)
+                    }
                 }
                 .padding(.top, 8)
             }
@@ -81,64 +83,6 @@ struct HomeView: View {
             .background(AppColors.background)
             .navigationDestination(for: Product.self) { product in
                 ProductDetailView(product: product)
-            }
-            .sheet(isPresented: $showProfile) {
-                ProfileView()
-            }
-            .sheet(isPresented: $showOffersSheet) {
-                NavigationStack {
-                    ZStack {
-                        AppColors.background.ignoresSafeArea()
-                        ScrollView {
-                            if activeOffers.isEmpty {
-                                VStack(spacing: 16) {
-                                    Image(systemName: "tag.slash")
-                                        .font(.system(size: 40))
-                                        .foregroundStyle(AppColors.grayLight)
-                                    Text("No Active Offers")
-                                        .font(.headline)
-                                        .foregroundStyle(AppColors.pureWhite)
-                                }
-                                .padding(.top, 100)
-                            } else {
-                                VStack(spacing: 16) {
-                                    ForEach(activeOffers) { offer in
-                                        HStack {
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text(offer.name).font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.gold)
-                                                if let code = offer.coupon_code {
-                                                    Text("Code: \(code)").font(.caption).foregroundStyle(AppColors.grayLight)
-                                                }
-                                            }
-                                            Spacer()
-                                            let discountValue = offer.discount_value ?? 0.0
-                                            let type = (offer.discount_type ?? "fixed").lowercased()
-                                            
-                                            if type == "percentage" {
-                                                Text("\(Int(discountValue))% OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
-                                            } else {
-                                                Text("₹\(Int(discountValue)) OFF").font(.caption).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
-                                            }
-                                        }
-                                        .padding()
-                                        .background(AppColors.surfaceDark)
-                                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    }
-                                }
-                                .padding()
-                            }
-                        }
-                    }
-                    .navigationTitle("Active Offers")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Done") { showOffersSheet = false }
-                                .foregroundStyle(AppColors.gold)
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
             }
         }
     }
@@ -187,7 +131,7 @@ struct HomeView: View {
             .padding(.trailing, 8)
             
             // Profile Icon
-            Button(action: { showProfile = true }) {
+            Button(action: { navManager.showProfile = true }) {
                 ZStack {
                     Circle()
                         .fill(LinearGradient.goldSubtle)
@@ -283,10 +227,10 @@ struct HomeView: View {
                     GoldButton(title: "SHOW OFFERS", isCompact: true) {
                         Task {
                             if let offers = try? await SyncManager.shared.fetchActiveOffers() {
-                                await MainActor.run { activeOffers = offers }
+                                await MainActor.run { navManager.activeOffers = offers }
                             }
                         }
-                        showOffersSheet = true
+                        navManager.showOffers = true
                     }
                 }
                 
