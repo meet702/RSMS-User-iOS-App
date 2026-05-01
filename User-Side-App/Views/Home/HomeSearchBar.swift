@@ -24,15 +24,13 @@ struct HomeSearchBar: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Search icon
+        HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(AppColors.gold)
+                .foregroundStyle(AppColors.grayMedium)
             
-            // Text field
             TextField("", text: $searchText, prompt:
-                Text("Search watches, jewelry, fashion...")
+                Text("Search watches, jewelry, fashion")
                     .foregroundStyle(AppColors.grayMedium)
             )
             .font(.subheadline)
@@ -46,35 +44,24 @@ struct HomeSearchBar: View {
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.system(size: 16))
                         .foregroundStyle(AppColors.grayMedium)
-                }
-            } else {
-                // Divider + filter icon when empty
-                Rectangle()
-                    .fill(AppColors.grayDark)
-                    .frame(width: 1, height: 20)
-                
-                Button(action: { showResults = true }) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(AppColors.gold)
                 }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(AppColors.surfaceDark)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 12)
                 .stroke(AppColors.grayDark.opacity(0.5), lineWidth: 1)
         )
         .padding(.horizontal, 20)
         .sheet(isPresented: $showResults) {
             SeeAllProductsView(
-                title: searchText.isEmpty ? "All Products" : "Results for \"\(searchText)\"",
-                products: searchText.isEmpty ? products : searchResults
+                title: "Results for \"\(searchText)\"",
+                products: searchResults
             )
         }
     }

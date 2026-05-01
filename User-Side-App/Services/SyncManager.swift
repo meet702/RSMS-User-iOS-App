@@ -400,4 +400,23 @@ class SyncManager {
             .insert(review)
             .execute()
     }
+    
+    /// Check if a user has purchased a specific product (any completed order containing the product)
+    func hasUserPurchasedProduct(userId: UUID, productId: UUID) async throws -> Bool {
+        struct OrderItemCheck: Decodable {
+            let id: UUID
+        }
+        
+        // Query order items where the order belongs to this user and contains this product
+        let items: [OrderItemCheck] = try await client
+            .from("customer_order_items")
+            .select("id, customer_orders!inner(user_id)")
+            .eq("product_id", value: productId)
+            .eq("customer_orders.user_id", value: userId)
+            .limit(1)
+            .execute()
+            .value
+        
+        return !items.isEmpty
+    }
 }

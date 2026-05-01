@@ -12,18 +12,9 @@ final class RazorpayManager: NSObject {
     private var razorpay: RazorpayCheckout?
     @MainActor private var onSuccess: ((String) -> Void)?
     @MainActor private var onFailure: ((String) -> Void)?
-    private static var isInitialized = false
     
     private override init() {
         super.init()
-    }
-    
-    private func ensureInitialized() {
-        if !Self.isInitialized {
-            self.razorpay = RazorpayCheckout.initWithKey(self.razorpayKey, andDelegateWithData: self)
-            Self.isInitialized = true
-            print("💳 RazorpayManager: Strictly Initialized once with key \(self.razorpayKey)")
-        }
     }
     
     @MainActor
@@ -47,10 +38,8 @@ final class RazorpayManager: NSObject {
             ]
         ]
         
-        // CRITICAL DEBUG: Print the exact options being sent
-        print("DEBUG PAYMENT OPTIONS: \(options)")
-        
-        ensureInitialized()
+        // Re-create checkout instance each time to avoid duplicate WKWebView handler crash
+        self.razorpay = RazorpayCheckout.initWithKey(self.razorpayKey, andDelegateWithData: self)
         
         if let topController = getTopViewController() {
             razorpay?.open(options, displayController: topController)
@@ -89,4 +78,3 @@ extension RazorpayManager: RazorpayPaymentCompletionProtocolWithData {
         }
     }
 }
-

@@ -13,6 +13,7 @@ struct PromoBanner: Identifiable, Hashable, Sendable {
     let subtitle: String
     let ctaText: String
     let imageName: String
+    let targetCategory: String?
     let gradientAngle: Double
     
     init(
@@ -21,6 +22,7 @@ struct PromoBanner: Identifiable, Hashable, Sendable {
         subtitle: String,
         ctaText: String,
         imageName: String = "brand_logo",
+        targetCategory: String? = nil,
         gradientAngle: Double = 45
     ) {
         self.id = id
@@ -28,6 +30,7 @@ struct PromoBanner: Identifiable, Hashable, Sendable {
         self.subtitle = subtitle
         self.ctaText = ctaText
         self.imageName = imageName
+        self.targetCategory = targetCategory
         self.gradientAngle = gradientAngle
     }
 }

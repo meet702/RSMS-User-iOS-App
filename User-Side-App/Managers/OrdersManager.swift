@@ -328,6 +328,7 @@ class OrdersManager {
     }
     
     func fetchRazorpayOrderID(amount: Double) async throws -> String {
+        // Hack for Test Mode: Razorpay's test environment blocks large transactions.
         // Round to 2 decimal places just in case, though the Edge Function does it too
         let roundedAmount = (amount * 100).rounded() / 100
         

@@ -113,7 +113,11 @@ struct BannerCard: View {
             SeeAllProductsView(
                 title: banner.title,
                 products: allProducts.filter { 
-                    $0.category.localizedCaseInsensitiveContains(banner.title) ||
+                    if let target = banner.targetCategory {
+                        if target == "All" { return true }
+                        return $0.category.localizedCaseInsensitiveContains(target) || $0.name.localizedCaseInsensitiveContains(target)
+                    }
+                    return $0.category.localizedCaseInsensitiveContains(banner.title) ||
                     banner.title.localizedCaseInsensitiveContains($0.category) ||
                     $0.name.localizedCaseInsensitiveContains(banner.title)
                 }

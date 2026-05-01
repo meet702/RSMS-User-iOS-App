@@ -21,6 +21,7 @@ struct CheckoutView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var failedOrderItems: [CartItem] = []
+    @State private var completedPurchaseItems: [CartItem] = []
     @State private var userAddresses: [AddressDTO] = []
     @State private var availableStores: [StoreDTO] = []
     @State private var selectedStoreId: UUID? = nil
@@ -150,7 +151,7 @@ struct CheckoutView: View {
                             }
                         }
                         
-                        Color.clear.frame(height: 120)
+                        Color.clear.frame(height: 160)
                     }
                     .padding(20)
                 }
@@ -161,14 +162,16 @@ struct CheckoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(AppColors.grayLight)
+                    if !isPlacingOrder {
+                        Button("Cancel") { dismiss() }.foregroundStyle(AppColors.grayLight)
+                    }
                 }
                 ToolbarItem(placement: .principal) {
                     Text("CHECKOUT").font(.headline).fontWeight(.bold).tracking(4).foregroundStyle(AppColors.gold)
                 }
             }
             .fullScreenCover(isPresented: $showSuccess) {
-                OrderSuccessView(onComplete: { dismiss() })
+                OrderSuccessView(onComplete: { dismiss() }, purchasedItems: completedPurchaseItems)
             }
             // Address picker sheet
             .sheet(isPresented: $showAddressPicker) {
@@ -211,9 +214,9 @@ struct CheckoutView: View {
                 )
                 .presentationDetents([.medium])
             }
-            .alert("PAYMENT ERROR", isPresented: $showError) {
+            .alert("Payment Unsuccessful", isPresented: $showError) {
                 if errorMessage.contains("network") || errorMessage.contains("connection") {
-                    Button("Retry Saving Order") {
+                    Button("Try Again") {
                         retryOrderRecording()
                     }
                 }
@@ -287,7 +290,7 @@ struct CheckoutView: View {
         } catch {
             print("❌ Failed to load offers: \(error)")
             await MainActor.run {
-                self.errorMessage = "Offers Error: \(error.localizedDescription)"
+                self.errorMessage = "Unable to load offers at this time. Please try again later."
             }
         }
     }
@@ -519,7 +522,12 @@ struct CheckoutView: View {
     }
     
     private var placeOrderFooter: some View {
-        VStack {
+        VStack(spacing: 0) {
+            // Subtle top separator
+            Rectangle()
+                .fill(AppColors.gold.opacity(0.1))
+                .frame(height: 0.5)
+            
             Button(action: { placeOrder() }) {
                 HStack(spacing: 12) {
                     if isPlacingOrder {
@@ -537,9 +545,11 @@ struct CheckoutView: View {
             }
             .buttonStyle(PressButtonStyle())
             .disabled(isPlacingOrder || userManager.isLoading || selectedAddressId == nil || selectedStoreId == nil)
-            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 34)
-            .background(AppColors.background.shadow(color: .black.opacity(0.4), radius: 10, y: -5))
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 16)
         }
+        .background(AppColors.background.ignoresSafeArea(edges: .bottom))
     }
     
     // MARK: - Actions
@@ -582,7 +592,7 @@ struct CheckoutView: View {
                         },
                         onFailure: { error in
                             print("Razorpay failed: \(error)")
-                            self.errorMessage = error
+                            self.errorMessage = "Your payment could not be completed. Please check your payment details and try again."
                             self.showError = true
                             isPlacingOrder = false
                         }
@@ -591,27 +601,7 @@ struct CheckoutView: View {
 
             } catch {
                 print("Failed to prepare Razorpay: \(error)")
-                
-                // Try to extract a more descriptive error from Supabase
-                var detailedMessage = error.localizedDescription
-                
-                if let functionsError = error as? FunctionsError {
-                    switch functionsError {
-                    case .httpError(let status, let data):
-                        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                           let message = json["error"] as? String {
-                            detailedMessage = "Edge Function Error (\(status)): \(message)"
-                        } else if let bodyString = String(data: data, encoding: .utf8) {
-                            detailedMessage = "Edge Function Error (\(status)): \(bodyString)"
-                        }
-                    case .relayError:
-                        detailedMessage = "Network Relay Error: The Edge Function could not be reached."
-                    default:
-                        break
-                    }
-                }
-                
-                self.errorMessage = detailedMessage
+                self.errorMessage = "We're having trouble connecting to our payment service. Please check your internet connection and try again."
                 self.showError = true
                 isPlacingOrder = false
             }
@@ -651,11 +641,12 @@ struct CheckoutView: View {
                 paymentMethod: selectedPayment,
                 storeId: storeId
             )
+            completedPurchaseItems = items
             showSuccess = true
             failedOrderItems = []
         } catch {
             print("Order recording failed: \(error)")
-            self.errorMessage = "DATABASE ERROR: \(error.localizedDescription)\n\nPlease contact support if the issue persists."
+            self.errorMessage = "Your payment was successful, but we had trouble saving your order. Please contact support if it doesn't appear in your orders."
             self.showError = true
         }
         isPlacingOrder = false

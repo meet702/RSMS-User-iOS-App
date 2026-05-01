@@ -146,24 +146,27 @@ enum MockData {
     
     static let banners: [PromoBanner] = [
         PromoBanner(
-            title: "Summer Collection",
-            subtitle: "Discover Timeless Elegance",
+            title: "Signature Collection",
+            subtitle: "Discover Our Finest Selections",
             ctaText: "SHOP NOW",
             imageName: "banner_summer",
+            targetCategory: "All",
             gradientAngle: 45
         ),
         PromoBanner(
             title: "Exclusive Offers",
-            subtitle: "On Selected Dior Timepieces",
+            subtitle: "On Selected Luxury Items",
             ctaText: "EXPLORE",
             imageName: "banner_watch",
+            targetCategory: "All",
             gradientAngle: 135
         ),
         PromoBanner(
-            title: "Rose des Vents",
-            subtitle: "Handcrafted Jewelry Masterpieces",
+            title: "New Arrivals",
+            subtitle: "Experience True Craftsmanship",
             ctaText: "DISCOVER",
             imageName: "jewelry_bracelet",
+            targetCategory: "All",
             gradientAngle: 90
         ),
     ]

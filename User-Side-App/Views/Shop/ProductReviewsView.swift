@@ -14,6 +14,8 @@ struct ProductReviewsView: View {
     
     @State private var isLoading = false
     @State private var showAddReview = false
+    @State private var hasPurchased = false
+    @State private var checkingPurchase = true
     
     // New review state
     @State private var newRating: Int = 5
@@ -38,17 +40,24 @@ struct ProductReviewsView: View {
                 
                 Spacer()
                 
-                Button(action: { showAddReview.toggle() }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus")
-                        Text("ADD REVIEW")
+                // Only show ADD REVIEW for verified purchasers
+                if checkingPurchase {
+                    ProgressView()
+                        .tint(AppColors.gold)
+                        .scaleEffect(0.7)
+                } else if hasPurchased {
+                    Button(action: { withAnimation(.spring(response: 0.4)) { showAddReview.toggle() } }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "plus")
+                            Text("ADD REVIEW")
+                        }
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(AppColors.background)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(AppColors.gold)
+                        .clipShape(Capsule())
                     }
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(AppColors.background)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(AppColors.gold)
-                    .clipShape(Capsule())
                 }
             }
             .padding(.horizontal, 20)
@@ -84,6 +93,9 @@ struct ProductReviewsView: View {
                 .padding(.horizontal, 20)
             }
         }
+        .task {
+            await checkPurchaseStatus()
+        }
     }
     
     private var addReviewForm: some View {
@@ -103,7 +115,7 @@ struct ProductReviewsView: View {
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("YOUR COMMENT")
+                Text("YOUR COMMENT (OPTIONAL)")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(AppColors.grayLight)
                 
@@ -130,12 +142,26 @@ struct ProductReviewsView: View {
             .padding(.vertical, 14)
             .background(AppColors.gold)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .disabled(newComment.isEmpty || isSubmitting)
+            .disabled(isSubmitting)
         }
         .padding(20)
         .background(AppColors.surfaceDark)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 20)
+    }
+    
+    private func checkPurchaseStatus() async {
+        guard let userId = userManager.supabaseUserId else {
+            checkingPurchase = false
+            return
+        }
+        do {
+            hasPurchased = try await SyncManager.shared.hasUserPurchasedProduct(userId: userId, productId: productId)
+        } catch {
+            print("❌ Failed to check purchase status: \(error)")
+            hasPurchased = false
+        }
+        checkingPurchase = false
     }
     
     private func loadReviews() async {
@@ -158,7 +184,7 @@ struct ProductReviewsView: View {
             user_id: userId,
             user_name: userManager.currentUser?.firstName ?? "Valued Customer",
             rating: newRating,
-            comment: newComment,
+            comment: newComment.isEmpty ? nil : newComment,
             created_at: nil
         )
         
