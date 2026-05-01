@@ -76,6 +76,16 @@ class SyncManager {
         return dtos
     }
     
+    /// Fetches admin-configured regional tax rules.
+    func fetchTaxRules() async throws -> [TaxRuleDTO] {
+        let rules: [TaxRuleDTO] = try await client
+            .from("tax_rules")
+            .select()
+            .execute()
+            .value
+        return rules
+    }
+    
     // MARK: - Profile Management
     
     func fetchProfile(userId: UUID) async throws -> ProfileDTO? {

@@ -33,7 +33,7 @@ struct WishlistView: View {
                     // Product grid
                     LazyVGrid(columns: columns, spacing: 14) {
                         ForEach(wishlistManager.items) { product in
-                            NavigationLink(value: product) {
+                            NavigationLink(destination: ProductDetailView(product: product)) {
                                 ProductCardGrid(product: product)
                             }
                             .buttonStyle(.plain)
@@ -47,9 +47,6 @@ struct WishlistView: View {
             }
         }
         .background(AppColors.background)
-        .navigationDestination(for: Product.self) { product in
-            ProductDetailView(product: product)
-        }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

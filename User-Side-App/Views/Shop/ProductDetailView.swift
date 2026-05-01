@@ -428,8 +428,8 @@ struct ProductDetailView: View {
                 .shadow(color: .black.opacity(0.5), radius: 10, y: -5)
                 .ignoresSafeArea(edges: .bottom)
         )
-        .fullScreenCover(isPresented: $showCheckout) {
-            CheckoutView()
+        .fullScreenCover(item: $directPurchaseItem) { item in
+            CheckoutView(directPurchaseItem: item)
         }
         .task {
             try? await loadReviews()
@@ -462,7 +462,7 @@ struct ProductDetailView: View {
     
     // MARK: - Actions
     
-    @State private var showCheckout = false
+    @State private var directPurchaseItem: CartItem? = nil
     
     private func addToCart() {
         cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
@@ -476,9 +476,12 @@ struct ProductDetailView: View {
     }
     
     private func buyNow() {
-        // Add to cart if not already there, then show checkout
-        cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
-        showCheckout = true
+        let item = CartItem(
+            product: product,
+            variant: selectedVariant,
+            quantity: 1
+        )
+        directPurchaseItem = item
     }
     
     private func loadReviews() async throws {

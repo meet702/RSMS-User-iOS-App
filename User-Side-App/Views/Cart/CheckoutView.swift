@@ -26,6 +26,25 @@ struct CheckoutView: View {
     @State private var selectedStoreId: UUID? = nil
     @State private var showStorePicker = false
     
+    @State private var regionTaxRules: [TaxRuleDTO] = []
+    
+    // Direct Purchase Bypass
+    var directPurchaseItem: CartItem? = nil
+    
+    private var itemsToCheckout: [CartItem] {
+        if let direct = directPurchaseItem {
+            return [direct]
+        }
+        return cartManager.items
+    }
+    
+    private var subtotalToCheckout: Double {
+        if let direct = directPurchaseItem {
+            return direct.totalPrice
+        }
+        return cartManager.subtotal
+    }
+    
     // Offers
     @State private var availableOffers: [OfferDTO] = []
     @State private var selectedOffer: OfferDTO? = nil
@@ -36,15 +55,45 @@ struct CheckoutView: View {
         let type = (offer.discount_type ?? "fixed").lowercased()
         
         if type == "percentage" {
-            let discount = cartManager.subtotal * (discountValue / 100.0)
-            return min(discount, cartManager.subtotal)
+            let discount = subtotalToCheckout * (discountValue / 100.0)
+            return min(discount, subtotalToCheckout)
         } else {
-            return min(discountValue, cartManager.subtotal)
+            return min(discountValue, subtotalToCheckout)
         }
     }
     
+    var taxableAmount: Double {
+        max(0.0, subtotalToCheckout - offerDiscount)
+    }
+    
+    var gstAmount: Double {
+        taxableAmount * 0.18
+    }
+    
+    var regionTaxAmount: Double {
+        var total = 0.0
+        let subtotal = subtotalToCheckout
+        let ratio = subtotal > 0 ? (taxableAmount / subtotal) : 1.0
+        
+        for item in itemsToCheckout {
+            let cat = item.product.category.lowercased().trimmingCharacters(in: .whitespaces)
+            if let rule = regionTaxRules.first(where: { ($0.category ?? "").lowercased().trimmingCharacters(in: .whitespaces) == cat }) {
+                let discountedItemPrice = item.totalPrice * ratio
+                let itemGST = discountedItemPrice * 0.18
+                let amountPlusGST = discountedItemPrice + itemGST
+                
+                total += amountPlusGST * rule.rate
+            }
+        }
+        return total
+    }
+    
+    var totalTaxAmount: Double {
+        gstAmount + regionTaxAmount
+    }
+    
     var finalTotal: Double {
-        let total = cartManager.subtotal - offerDiscount
+        let total = subtotalToCheckout + totalTaxAmount - offerDiscount
         return max(1.0, total) // Prevent Razorpay crash on <= 0 payments
     }
     
@@ -351,7 +400,7 @@ struct CheckoutView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(selectedPayment).font(.subheadline).fontWeight(.medium)
                         .foregroundStyle(AppColors.pureWhite)
-                    Text(cartManager.subtotal.formattedPrice).font(.caption2).foregroundStyle(AppColors.grayLight)
+                    Text(subtotalToCheckout.formattedPrice).font(.caption2).foregroundStyle(AppColors.grayLight)
                 }
                 
                 Spacer()
@@ -364,7 +413,7 @@ struct CheckoutView: View {
     
     private var orderSummaryCard: some View {
         VStack(spacing: 12) {
-            ForEach(cartManager.items.prefix(3)) { item in
+            ForEach(itemsToCheckout.prefix(3)) { item in
                 HStack {
                     Text("\(item.quantity)x \(item.product.name)")
                         .font(.caption).foregroundStyle(AppColors.grayLight)
@@ -374,8 +423,8 @@ struct CheckoutView: View {
                 }
             }
             
-            if cartManager.items.count > 3 {
-                Text("+ \(cartManager.items.count - 3) more items")
+            if itemsToCheckout.count > 3 {
+                Text("+ \(itemsToCheckout.count - 3) more items")
                     .font(.caption2).foregroundStyle(AppColors.gold).frame(maxWidth: .infinity, alignment: .leading)
             }
             
@@ -384,7 +433,7 @@ struct CheckoutView: View {
             HStack {
                 Text("SUBTOTAL").font(.caption).foregroundStyle(AppColors.grayLight)
                 Spacer()
-                Text(cartManager.subtotal.formattedPrice).font(.caption).foregroundStyle(AppColors.pureWhite)
+                Text(subtotalToCheckout.formattedPrice).font(.caption).foregroundStyle(AppColors.pureWhite)
             }
             
             if offerDiscount > 0 {
@@ -395,10 +444,54 @@ struct CheckoutView: View {
                 }
             }
             
+            // ── Step 3 : Tax 18% ────────────────────────────────
+            HStack(spacing: 4) {
+                Text("TAX")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppColors.grayLight)
+                Text("18% × \(taxableAmount.formattedPrice)")
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppColors.grayMedium)
+                Spacer()
+                Text("+" + gstAmount.formattedPrice)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(AppColors.grayLight)
+            }
+            
+            // ── Step 4 : Region Tax (Category based from Group5 RSMS) ──
+            if regionTaxAmount > 0 {
+                HStack(spacing: 4) {
+                    Text("REGION TAX")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(AppColors.grayLight)
+                    
+                    let baseAmount = taxableAmount + gstAmount
+                    let taxRuleForDisplay = regionTaxRules.first(where: { ($0.category ?? "").lowercased().trimmingCharacters(in: .whitespaces) == itemsToCheckout.first?.product.category.lowercased().trimmingCharacters(in: .whitespaces) })
+                    let ratePercent = (taxRuleForDisplay?.rate ?? 0) * 100
+                    
+                    Text("Admin Tax (\(ratePercent, specifier: "%.1f")%) on \(baseAmount.formattedPrice)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(AppColors.grayMedium)
+                    
+                    Spacer()
+                    Text("+" + regionTaxAmount.formattedPrice)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(AppColors.grayLight)
+                }
+            }
+            
             Divider().background(AppColors.grayDark.opacity(0.3))
             
             HStack {
-                Text("TOTAL AMOUNT").font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("TOTAL AMOUNT").font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
+                    let taxLabel = regionTaxAmount > 0
+                        ? "Incl. Tax + Region Tax"
+                        : "Incl. Tax"
+                    Text(taxLabel)
+                        .font(.system(size: 9))
+                        .foregroundStyle(AppColors.grayMedium)
+                }
                 Spacer()
                 Text(finalTotal.formattedPrice).font(.headline).fontWeight(.bold).foregroundStyle(AppColors.gold)
             }
@@ -531,11 +624,11 @@ struct CheckoutView: View {
         guard let userId = userManager.supabaseUserId else { return }
         
         // 1. Capture items BEFORE clearing cart
-        let itemsToOrder = cartManager.items
+        let itemsToOrder = itemsToCheckout
         self.failedOrderItems = itemsToOrder // Store in case we need to retry
         
         // 2. Clear cart INSTANTLY so user sees their bag is empty
-        cartManager.clearCart(userId: userId)
+        if directPurchaseItem == nil { cartManager.clearCart(userId: userId) }
         
         // 3. Record the order in our database in the background
         Task {
@@ -553,6 +646,7 @@ struct CheckoutView: View {
                 redeemedPoints: 0,
                 offerDiscount: offerDiscount,
                 offerId: selectedOffer?.id,
+                regionTaxAmount: regionTaxAmount,
                 shippingAddress: shippingAddress,
                 paymentMethod: selectedPayment,
                 storeId: storeId

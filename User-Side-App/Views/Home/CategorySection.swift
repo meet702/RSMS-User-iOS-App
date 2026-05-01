@@ -10,7 +10,7 @@ import SwiftUI
 struct CategorySection: View {
     let categories: [Category]
     let products: [Product]
-    @State private var selectedCategory: Category? = nil
+    @Environment(NavigationManager.self) private var navManager
     @State private var showAllProducts = false
     
     var body: some View {
@@ -23,22 +23,13 @@ struct CategorySection: View {
                 HStack(spacing: 12) {
                     ForEach(categories) { category in
                         CategoryCard(category: category) {
-                            selectedCategory = category
+                            navManager.navigateToShop(withCategory: category.name)
                         }
                     }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 4) // breathing room for shadow/scale
             }
-        }
-        .sheet(item: $selectedCategory) { category in
-            SeeAllProductsView(
-                title: category.name,
-                products: products.filter { 
-                    $0.category.localizedCaseInsensitiveContains(category.name) ||
-                    category.name.localizedCaseInsensitiveContains($0.category)
-                }
-            )
         }
         .sheet(isPresented: $showAllProducts) {
             SeeAllProductsView(

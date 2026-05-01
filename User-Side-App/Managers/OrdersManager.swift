@@ -178,6 +178,7 @@ class OrdersManager {
                     redeemedPoints: Int = 0, 
                     offerDiscount: Double = 0.0,
                     offerId: UUID? = nil,
+                    regionTaxAmount: Double = 0.0,   // Calculated admin region tax per category
                     shippingAddress: String, 
                     paymentMethod: String,
                     storeId: UUID) async throws {
@@ -186,8 +187,9 @@ class OrdersManager {
         
         let subtotal = cartItems.reduce(0) { $0 + $1.totalPrice }
         let discount = Double(redeemedPoints) + offerDiscount // 1 point = 1 INR + Offer discount
-        let taxes    = max(0.0, (subtotal - discount)) * 0.18
-        let deliveryFee = subtotal >= 50_000 ? 0.0 : 500.0
+        let taxableBase = max(0.0, subtotal - discount)
+        let taxes    = (taxableBase * 0.18) + regionTaxAmount  // 18% Tax + Region Tax
+        let deliveryFee = 0.0
         let orderNumber = generateOrderNumber()
         
         // Disable points earning per user request

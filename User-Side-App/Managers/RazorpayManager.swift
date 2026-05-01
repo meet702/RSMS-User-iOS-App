@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 import SwiftUI
 
-class RazorpayManager: NSObject {
+final class RazorpayManager: NSObject {
     @MainActor static let shared = RazorpayManager()
     
     // Replace with your actual Key ID from Razorpay Dashboard
@@ -14,12 +14,8 @@ class RazorpayManager: NSObject {
     @MainActor private var onFailure: ((String) -> Void)?
     private static var isInitialized = false
     
-    override init() {
+    private override init() {
         super.init()
-        // Initialize once during startup on the main thread
-        DispatchQueue.main.async {
-            self.ensureInitialized()
-        }
     }
     
     private func ensureInitialized() {

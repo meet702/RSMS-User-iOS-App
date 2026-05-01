@@ -246,6 +246,16 @@ struct StoreDTO: Codable, Sendable, Identifiable, Hashable {
     let city: String
 }
 
+// MARK: - Tax Rule DTO
+
+/// Matches the `tax_rules` table — admin-configured tax per category (from Group5 RSMS model)
+struct TaxRuleDTO: Codable, Sendable, Identifiable {
+    let id: UUID
+    let category: String?
+    let name: String
+    let rate: Double          // e.g. 5.0 means 5%
+}
+
 // MARK: - Review DTO
 
 struct ReviewDTO: Codable, Sendable, Identifiable {
