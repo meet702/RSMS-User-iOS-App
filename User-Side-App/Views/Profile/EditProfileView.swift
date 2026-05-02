@@ -2,9 +2,6 @@
 //  EditProfileView.swift
 //  User-Side-App
 //
-//  Dynamic Edit Profile sheet — lets the user update name, email,
-//  phone number, and profile photo (initials avatar with colour picker).
-//
 
 import SwiftUI
 import PhotosUI
@@ -37,7 +34,6 @@ struct EditProfileView: View {
                     VStack(spacing: 32) {
                         avatarSection
                         formSection
-                        membershipCard
                         Color.clear.frame(height: 40)
                     }
                     .padding(24)
@@ -107,7 +103,6 @@ struct EditProfileView: View {
                         .stroke(AppColors.gold.opacity(0.4), lineWidth: 3)
                         .frame(width: 108, height: 108)
                     
-                    // Edit badge
                     ZStack {
                         Circle().fill(AppColors.surfaceDark).frame(width: 32, height: 32)
                         Image(systemName: "camera.fill")
@@ -121,7 +116,6 @@ struct EditProfileView: View {
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
                        let uiImage = UIImage(data: data) {
-                           // Compress image significantly for quick upload
                            if let compressed = uiImage.jpegData(compressionQuality: 0.3) {
                                self.rawAvatarData = compressed
                                self.avatarImage = Image(uiImage: UIImage(data: compressed)!)
@@ -192,45 +186,6 @@ struct EditProfileView: View {
         .padding(.horizontal, 16).padding(.vertical, 14)
     }
     
-    // MARK: - Membership Card
-    
-    private var membershipCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            sectionLabel("MEMBERSHIP")
-            
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(AppColors.surfaceGold.opacity(0.4))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColors.gold.opacity(0.3), lineWidth: 1))
-                
-                Circle()
-                    .fill(RadialGradient(colors: [AppColors.gold.opacity(0.12), .clear],
-                                        center: .center, startRadius: 0, endRadius: 120))
-                    .frame(width: 250).offset(x: 80, y: -20)
-                
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        if let user = userManager.currentUser {
-                            HStack(spacing: 6) {
-                                Image(systemName: user.tier.icon)
-                                    .font(.system(size: 13)).foregroundStyle(AppColors.gold)
-                                Text(user.tier.rawValue)
-                                    .font(.caption).fontWeight(.bold).tracking(2).foregroundStyle(AppColors.gold)
-                            }
-                            Text("\(userManager.currentUser?.loyaltyPoints ?? 0) Points").font(.title3).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
-                            Text("\(ordersManager.totalOrders) Total Orders").font(.caption).foregroundStyle(AppColors.grayLight)
-                        }
-                    }
-                    Spacer()
-                    Image(systemName: "crown.fill")
-                        .font(.system(size: 44, weight: .ultraLight)).foregroundStyle(AppColors.gold.opacity(0.2))
-                }
-                .padding(20)
-            }
-            .frame(height: 110)
-        }
-    }
-    
     // MARK: - Helpers
     
     private func sectionLabel(_ title: String) -> some View {
@@ -268,13 +223,8 @@ struct EditProfileView: View {
         withAnimation { isSaving = true }
         
         Task {
-            // Upload Avatar if changed
             if let data = rawAvatarData {
-                do {
-                    try await userManager.uploadAvatar(data: data)
-                } catch {
-                    print("Failed to upload avatar: \(error)")
-                }
+                try? await userManager.uploadAvatar(data: data)
             }
             
             userManager.updateProfile(firstName: firstName.trimmingCharacters(in: .whitespaces),

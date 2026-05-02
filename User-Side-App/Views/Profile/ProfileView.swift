@@ -2,8 +2,6 @@
 //  ProfileView.swift
 //  User-Side-App
 //
-//  Profile tab — all menu rows now lead to real destination views
-//
 
 import SwiftUI
 
@@ -14,9 +12,8 @@ struct ProfileView: View {
     @Environment(NavigationManager.self) private var navManager
     @Environment(OrdersManager.self) private var ordersManager
     @Environment(\.dismiss) private var dismiss
+    
     @State private var showEditProfile = false
-    @State private var showOrdersSheet = false
-    @State private var showWishlistSheet = false
     @State private var addressCount = 0
     @State private var navigateToAddresses = false
     @State private var navigateToOrders = false
@@ -64,7 +61,6 @@ struct ProfileView: View {
             .navigationDestination(isPresented: $navigateToWishlist) {
                 WishlistView()
             }
-
             .task {
                 if let userId = userManager.supabaseUserId {
                     async let addressesTask = SyncManager.shared.fetchAddresses(userId: userId)
@@ -104,7 +100,6 @@ struct ProfileView: View {
                 }
                 .overlay(Circle().stroke(AppColors.gold.opacity(0.3), lineWidth: 4))
                 
-                // Edit button
                 Button(action: { showEditProfile = true }) {
                     Image(systemName: "pencil")
                         .font(.system(size: 11, weight: .bold))
@@ -123,16 +118,6 @@ struct ProfileView: View {
                     .font(.title3).fontWeight(.bold).foregroundStyle(AppColors.pureWhite)
                 Text(userManager.currentUser?.email ?? "")
                     .font(.caption).foregroundStyle(AppColors.grayLight)
-            }
-            
-            if let user = userManager.currentUser {
-                HStack(spacing: 6) {
-                    Image(systemName: user.tier.icon)
-                    Text(user.tier.rawValue).font(.caption2).fontWeight(.bold).tracking(1)
-                }
-                .foregroundStyle(AppColors.alwaysBlack)
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(AppColors.gold).clipShape(Capsule())
             }
         }
     }
@@ -185,7 +170,6 @@ struct ProfileView: View {
             }
             
             appearanceSection
-            
         }
         .padding(.horizontal, 20)
     }
@@ -267,8 +251,6 @@ enum ProfileDestination: Hashable {
             OrdersView()
         case .shippingAddresses:
             ShippingAddressListView()
-        default:
-            ProfileDetailPlaceholderView(destination: self)
         }
     }
 }
@@ -340,7 +322,6 @@ struct ProfileMenuRow: View {
     let destination: ProfileDestination
     
     var body: some View {
-        // All destinations stay in the Profile stack — no tab switching
         NavigationLink(value: destination) {
             rowContent
         }

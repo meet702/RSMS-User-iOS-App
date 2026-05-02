@@ -2,8 +2,6 @@
 //  ProductReviewsView.swift
 //  User-Side-App
 //
-//  Dynamic reviews section for DIOR products
-//
 
 import SwiftUI
 
@@ -17,7 +15,6 @@ struct ProductReviewsView: View {
     @State private var hasPurchased = false
     @State private var checkingPurchase = true
     
-    // New review state
     @State private var newRating: Int = 5
     @State private var newComment: String = ""
     @State private var isSubmitting = false
@@ -40,7 +37,6 @@ struct ProductReviewsView: View {
                 
                 Spacer()
                 
-                // Only show ADD REVIEW for verified purchasers
                 if checkingPurchase {
                     ProgressView()
                         .tint(AppColors.gold)
@@ -60,7 +56,6 @@ struct ProductReviewsView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
             
             if showAddReview {
                 addReviewForm
@@ -90,7 +85,6 @@ struct ProductReviewsView: View {
                         ReviewRow(review: review)
                     }
                 }
-                .padding(.horizontal, 20)
             }
         }
         .task {
@@ -147,7 +141,6 @@ struct ProductReviewsView: View {
         .padding(20)
         .background(AppColors.surfaceDark)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20)
     }
     
     private func checkPurchaseStatus() async {
