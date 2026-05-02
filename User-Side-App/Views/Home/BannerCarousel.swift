@@ -22,6 +22,7 @@ struct BannerCarousel: View {
                 ForEach(Array(banners.enumerated()), id: \.element.id) { index, banner in
                     BannerCard(banner: banner, allProducts: products)
                         .tag(index)
+                        .accessibilityLabel("Banner \(index + 1) of \(banners.count): \(banner.title)")
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -34,7 +35,6 @@ struct BannerCarousel: View {
                 }
             }
             
-            // Custom page indicators
             HStack(spacing: 6) {
                 ForEach(0..<banners.count, id: \.self) { index in
                     Capsule()
@@ -46,6 +46,7 @@ struct BannerCarousel: View {
                         .animation(.easeInOut(duration: 0.3), value: currentIndex)
                 }
             }
+            .accessibilityHidden(true)
         }
     }
 }
@@ -105,6 +106,10 @@ struct BannerCard: View {
                 Spacer()
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(banner.title), \(banner.subtitle)")
+        .accessibilityHint("Double tap to \(banner.ctaText.lowercased())")
+        .accessibilityAction { showProducts = true }
         .overlay(
             RoundedRectangle(cornerRadius: 18)
                 .stroke(AppColors.gold.opacity(0.2), lineWidth: 1)

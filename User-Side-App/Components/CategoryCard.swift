@@ -69,6 +69,9 @@ struct CategoryCard: View {
             .frame(width: 100)
         }
         .buttonStyle(CategoryButtonStyle())
+        .accessibilityLabel("Category: \(category.name)")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Double tap to view products in \(category.name)")
     }
 }
 

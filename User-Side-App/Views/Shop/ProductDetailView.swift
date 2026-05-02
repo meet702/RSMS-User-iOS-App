@@ -21,6 +21,7 @@ struct ProductDetailView: View {
     @State private var isDescriptionExpanded: Bool = false
     @State private var showShareSheet: Bool = false
     @State private var reviews: [ReviewDTO] = []
+    @State private var quantity: Int = 1
     
     private var dynamicRating: Double {
         if reviews.isEmpty { return 0.0 }
@@ -63,6 +64,12 @@ struct ProductDetailView: View {
                         
                         // Variant selector
                         variantSelector
+                        
+                        // Divider
+                        thinDivider
+                        
+                        // Quantity
+                        quantitySelector
                         
                         // Divider
                         thinDivider
@@ -110,6 +117,7 @@ struct ProductDetailView: View {
                         .background(AppColors.background.opacity(0.5))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Back")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 HStack(spacing: 12) {
@@ -121,6 +129,7 @@ struct ProductDetailView: View {
                             .background(AppColors.background.opacity(0.5))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel(wishlistManager.isWishlisted(product) ? "Remove from wishlist" : "Add to wishlist")
                     
                     Button(action: { showShareSheet = true }) {
                         Image(systemName: "square.and.arrow.up")
@@ -130,6 +139,7 @@ struct ProductDetailView: View {
                             .background(AppColors.background.opacity(0.5))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel("Share product")
                 }
             }
         }
@@ -166,6 +176,7 @@ struct ProductDetailView: View {
                         )
                     }
                     .tag(index)
+                    .accessibilityLabel("Product image \(index + 1) of 3")
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -180,6 +191,7 @@ struct ProductDetailView: View {
                 }
             }
             .padding(.bottom, 16)
+            .accessibilityHidden(true)
         }
     }
     
@@ -217,6 +229,8 @@ struct ProductDetailView: View {
                     .font(.caption)
                     .foregroundStyle(AppColors.grayLight)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Rating: \(String(format: "%.1f", dynamicRating)) out of 5 stars, based on \(dynamicReviewCount) reviews")
         }
     }
     
@@ -300,6 +314,8 @@ struct ProductDetailView: View {
                                 )
                         }
                         .buttonStyle(PressButtonStyle())
+                        .accessibilityLabel(variant)
+                        .accessibilityHint(selectedVariant == variant ? "Currently selected" : "Double tap to select \(variant)")
                     }
                 }
             }
@@ -369,6 +385,54 @@ struct ProductDetailView: View {
             }
             
             Spacer()
+        }
+    }
+    
+    // MARK: - Quantity Selector
+    
+    private var quantitySelector: some View {
+        HStack {
+            Text("Quantity")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(AppColors.pureWhite)
+            
+            Spacer()
+            
+            HStack(spacing: 20) {
+                Button(action: { if quantity > 1 { quantity -= 1 } }) {
+                    Image(systemName: "minus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.pureWhite)
+                        .frame(width: 32, height: 32)
+                        .background(AppColors.surfaceDark)
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Decrease quantity")
+                
+                Text("\(quantity)")
+                    .font(.headline)
+                    .foregroundStyle(AppColors.pureWhite)
+                    .frame(minWidth: 30)
+                    .accessibilityLabel("Quantity: \(quantity)")
+                
+                Button(action: { quantity += 1 }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(AppColors.background)
+                        .frame(width: 32, height: 32)
+                        .background(AppColors.gold)
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Increase quantity")
+            }
+            .padding(4)
+            .background(AppColors.surfaceDark)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(AppColors.grayDark.opacity(0.3), lineWidth: 1)
+            )
         }
     }
     
@@ -454,6 +518,11 @@ struct ProductDetailView: View {
             .clipShape(Capsule())
             .shadow(color: AppColors.gold.opacity(0.3), radius: 10)
             .padding(.top, 60)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Added to Cart")
+            .onAppear {
+                AccessibilityNotification.Announcement("Added to Cart").post()
+            }
             
             Spacer()
         }
@@ -465,7 +534,7 @@ struct ProductDetailView: View {
     @State private var directPurchaseItem: CartItem? = nil
     
     private func addToCart() {
-        cartManager.addToCart(product: product, variant: selectedVariant, userId: userManager.supabaseUserId)
+        cartManager.addToCart(product: product, variant: selectedVariant, quantity: quantity, userId: userManager.supabaseUserId)
         withAnimation(.spring(response: 0.4)) {
             showAddedToCart = true
         }
@@ -479,7 +548,7 @@ struct ProductDetailView: View {
         let item = CartItem(
             product: product,
             variant: selectedVariant,
-            quantity: 1
+            quantity: quantity
         )
         directPurchaseItem = item
     }

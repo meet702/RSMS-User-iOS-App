@@ -12,6 +12,7 @@ struct CategorySection: View {
     let products: [Product]
     @Environment(NavigationManager.self) private var navManager
     @State private var showAllProducts = false
+    @State private var selectedCategory: Category? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -23,7 +24,7 @@ struct CategorySection: View {
                 HStack(spacing: 12) {
                     ForEach(categories) { category in
                         CategoryCard(category: category) {
-                            navManager.navigateToShop(withCategory: category.name)
+                            selectedCategory = category
                         }
                     }
                 }
@@ -35,6 +36,12 @@ struct CategorySection: View {
             SeeAllProductsView(
                 title: "All Categories",
                 products: products
+            )
+        }
+        .sheet(item: $selectedCategory) { category in
+            SeeAllProductsView(
+                title: category.name,
+                products: products.filter { $0.category == category.name }
             )
         }
     }

@@ -29,6 +29,8 @@ struct GoldButton: View {
                 .clipShape(Capsule())
         }
         .buttonStyle(PressButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -53,6 +55,8 @@ struct GoldOutlineButton: View {
                 )
         }
         .buttonStyle(PressButtonStyle())
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(.isButton)
     }
 }
 

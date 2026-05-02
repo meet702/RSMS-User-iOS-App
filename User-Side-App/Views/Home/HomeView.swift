@@ -109,6 +109,9 @@ struct HomeView: View {
                     .tracking(3)
                     .foregroundStyle(AppColors.grayLight)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityLabel("DIOR, Luxury Redefined")
             
             Spacer()
             
@@ -129,6 +132,8 @@ struct HomeView: View {
                 }
             }
             .padding(.trailing, 8)
+            .accessibilityLabel(notificationManager.hasUnreadNotifications ? "Notifications, new available" : "Notifications")
+            .accessibilityHint("Double tap to view notifications")
             
             // Profile Icon
             Button(action: { navManager.showProfile = true }) {
@@ -143,6 +148,8 @@ struct HomeView: View {
                 }
                 .overlay(Circle().stroke(AppColors.gold.opacity(0.3), lineWidth: 1.5))
             }
+            .accessibilityLabel("Profile")
+            .accessibilityHint("Double tap to view your profile and settings")
         }
         .padding(.horizontal, 20)
     }
@@ -176,6 +183,7 @@ struct HomeView: View {
                 .frame(height: 0.5)
         }
         .padding(.horizontal, 40)
+        .accessibilityHidden(true)
     }
     
     // MARK: - Offers Banner
@@ -244,6 +252,17 @@ struct HomeView: View {
         }
         .frame(height: 170)
         .padding(.horizontal, 20)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Active Offers. Unlock exclusive discounts at checkout.")
+        .accessibilityHint("Double tap to show offers")
+        .accessibilityAction {
+            Task {
+                if let offers = try? await SyncManager.shared.fetchActiveOffers() {
+                    await MainActor.run { navManager.activeOffers = offers }
+                }
+            }
+            navManager.showOffers = true
+        }
     }
     
     // MARK: - Appointment Teaser
@@ -299,6 +318,8 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .frame(height: 88)
         .padding(.horizontal, 20)
+        .accessibilityLabel("Book a Store Visit. Experience luxury in person. Book a private appointment.")
+        .accessibilityHint("Double tap to open appointment booking")
     }
 }
 

@@ -28,6 +28,8 @@ struct AsyncProductImage: View {
                         .scaledToFill()
                         .frame(width: geo.size.width, height: geo.size.height)
                         .clipped()
+                        .accessibilityLabel("Product image of \(product.name)")
+                        .accessibilityAddTraits(.isImage)
                 }
                 // 2️⃣ Remote URL
                 else if let urlString = product.imageURL, let url = URL(string: urlString) {
@@ -36,18 +38,23 @@ struct AsyncProductImage: View {
                         case .empty:
                             ShimmerPlaceholder(category: product.category)
                                 .frame(width: geo.size.width, height: geo.size.height)
+                                .accessibilityLabel("Loading image for \(product.name)")
                         case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
                                 .frame(width: geo.size.width, height: geo.size.height)
                                 .clipped()
+                                .accessibilityLabel("Product image of \(product.name)")
+                                .accessibilityAddTraits(.isImage)
                         case .failure:
                             CategoryFallbackIcon(category: product.category)
                                 .frame(width: geo.size.width, height: geo.size.height)
+                                .accessibilityLabel("Product image of \(product.name) not available")
                         @unknown default:
                             ShimmerPlaceholder(category: product.category)
                                 .frame(width: geo.size.width, height: geo.size.height)
+                                .accessibilityLabel("Loading image for \(product.name)")
                         }
                     }
                 }
@@ -55,6 +62,7 @@ struct AsyncProductImage: View {
                 else {
                     CategoryFallbackIcon(category: product.category)
                         .frame(width: geo.size.width, height: geo.size.height)
+                        .accessibilityLabel("Product image of \(product.name) not available")
                 }
             }
         }

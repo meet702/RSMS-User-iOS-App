@@ -18,11 +18,37 @@ struct ProductCardHorizontal: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                AsyncProductImage(product: product)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 160)
-                    .clipped()
+                // Main focus group for the product details
+                VStack(alignment: .leading, spacing: 0) {
+                    AsyncProductImage(product: product)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 160)
+                        .clipped()
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(product.brand)
+                            .font(.system(size: 10, weight: .semibold)).tracking(2)
+                            .foregroundStyle(AppColors.gold)
+                        Text(LocalizedStringKey(product.name))
+                            .font(.subheadline).fontWeight(.medium)
+                            .foregroundStyle(AppColors.pureWhite).lineLimit(1)
+                        HStack(spacing: 6) {
+                            Text(product.price.formattedPrice)
+                                .font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.gold)
+                            if let original = product.originalPrice {
+                                Text(original.formattedPrice)
+                                    .font(.caption2).foregroundStyle(AppColors.grayLight)
+                                    .strikethrough(color: AppColors.grayLight)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 12).padding(.vertical, 10)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(product.brand), \(product.name). Price: \(product.price.formattedPrice). \(product.isNew ? "New arrival" : "")")
+                .accessibilityHint("Double tap to view details")
                 
+                // Separate focus for wishlist
                 Button(action: { wishlistManager.toggle(product, userId: userManager.supabaseUserId) }) {
                     Image(systemName: wishlistManager.isWishlisted(product) ? "heart.fill" : "heart")
                         .font(.system(size: 16))
@@ -32,6 +58,7 @@ struct ProductCardHorizontal: View {
                         .clipShape(Circle())
                 }
                 .padding(10)
+                .accessibilityLabel(wishlistManager.isWishlisted(product) ? "Remove from wishlist" : "Add to wishlist")
                 
                 if product.isNew {
                     VStack {
@@ -46,27 +73,9 @@ struct ProductCardHorizontal: View {
                             Spacer()
                         }
                     }
+                    .accessibilityHidden(true)
                 }
             }
-            
-            VStack(alignment: .leading, spacing: 6) {
-                Text(product.brand)
-                    .font(.system(size: 10, weight: .semibold)).tracking(2)
-                    .foregroundStyle(AppColors.gold)
-                Text(LocalizedStringKey(product.name))
-                    .font(.subheadline).fontWeight(.medium)
-                    .foregroundStyle(AppColors.pureWhite).lineLimit(1)
-                HStack(spacing: 6) {
-                    Text(product.price.formattedPrice)
-                        .font(.subheadline).fontWeight(.bold).foregroundStyle(AppColors.gold)
-                    if let original = product.originalPrice {
-                        Text(original.formattedPrice)
-                            .font(.caption2).foregroundStyle(AppColors.grayLight)
-                            .strikethrough(color: AppColors.grayLight)
-                    }
-                }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 10)
         }
         .frame(width: 180)
         .background(AppColors.surfaceDark)
@@ -85,11 +94,43 @@ struct ProductCardGrid: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                AsyncProductImage(product: product)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 140)
-                    .clipped()
+                // Main focus group
+                VStack(alignment: .leading, spacing: 0) {
+                    AsyncProductImage(product: product)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 140)
+                        .clipped()
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(product.brand)
+                            .font(.system(size: 9, weight: .semibold)).tracking(1.5)
+                            .foregroundStyle(AppColors.gold)
+                        Text(LocalizedStringKey(product.name))
+                            .font(.caption).fontWeight(.medium)
+                            .foregroundStyle(AppColors.pureWhite).lineLimit(1)
+                        HStack(spacing: 4) {
+                            Text(product.price.formattedPrice)
+                                .font(.caption).fontWeight(.bold).foregroundStyle(AppColors.goldLight)
+                            if let pct = product.discountPercentage {
+                                Text("\(pct)% OFF")
+                                    .font(.system(size: 9, weight: .bold)).foregroundStyle(AppColors.goldDark)
+                            }
+                        }
+                        HStack(spacing: 2) {
+                            ForEach(0..<5, id: \.self) { index in
+                                Image(systemName: index < Int(product.rating) ? "star.fill" : "star")
+                                    .font(.system(size: 8)).foregroundStyle(AppColors.gold.opacity(0.7))
+                            }
+                        }
+                        .accessibilityLabel("\(Int(product.rating)) out of 5 stars")
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 8)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(product.brand), \(product.name). Price: \(product.price.formattedPrice). \(Int(product.rating)) out of 5 stars.")
+                .accessibilityHint("Double tap to view details")
                 
+                // Action focus
                 Button(action: { wishlistManager.toggle(product, userId: userManager.supabaseUserId) }) {
                     Image(systemName: wishlistManager.isWishlisted(product) ? "heart.fill" : "heart")
                         .font(.system(size: 14))
@@ -99,31 +140,8 @@ struct ProductCardGrid: View {
                         .clipShape(Circle())
                 }
                 .padding(8)
+                .accessibilityLabel(wishlistManager.isWishlisted(product) ? "Remove from wishlist" : "Add to wishlist")
             }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(product.brand)
-                    .font(.system(size: 9, weight: .semibold)).tracking(1.5)
-                    .foregroundStyle(AppColors.gold)
-                Text(LocalizedStringKey(product.name))
-                    .font(.caption).fontWeight(.medium)
-                    .foregroundStyle(AppColors.pureWhite).lineLimit(1)
-                HStack(spacing: 4) {
-                    Text(product.price.formattedPrice)
-                        .font(.caption).fontWeight(.bold).foregroundStyle(AppColors.goldLight)
-                    if let pct = product.discountPercentage {
-                        Text("\(pct)% OFF")
-                            .font(.system(size: 9, weight: .bold)).foregroundStyle(AppColors.goldDark)
-                    }
-                }
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { index in
-                        Image(systemName: index < Int(product.rating) ? "star.fill" : "star")
-                            .font(.system(size: 8)).foregroundStyle(AppColors.gold.opacity(0.7))
-                    }
-                }
-            }
-            .padding(.horizontal, 10).padding(.vertical, 8)
         }
         .background(AppColors.surfaceDark)
         .clipShape(RoundedRectangle(cornerRadius: 14))

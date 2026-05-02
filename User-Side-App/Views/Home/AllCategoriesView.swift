@@ -39,6 +39,7 @@ struct AllCategoriesView: View {
                                 .foregroundStyle(AppColors.pureWhite)
                                 .padding(.top, 20)
                                 .padding(.horizontal, 24)
+                                .accessibilityAddTraits(.isHeader)
                             
                             // Masonry Grid
                             HStack(alignment: .top, spacing: 28) {
@@ -76,6 +77,7 @@ struct AllCategoriesView: View {
                             .background(AppColors.surfaceDark)
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel("Close")
                 }
             }
         }
@@ -203,6 +205,8 @@ struct MasonryCategoryCard: View {
             .shadow(color: .black.opacity(0.5), radius: 12, y: 8)
         }
         .buttonStyle(PressButtonStyle())
+        .accessibilityLabel("\(category.name) collection, \(category.productCount) items")
+        .accessibilityHint("Double tap to view \(category.name) items")
     }
 }
 

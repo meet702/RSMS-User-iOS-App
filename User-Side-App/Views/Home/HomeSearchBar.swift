@@ -33,6 +33,8 @@ struct HomeSearchBar: View {
                 Text("Search watches, jewelry, fashion")
                     .foregroundStyle(AppColors.grayMedium)
             )
+            .accessibilityLabel("Search")
+            .accessibilityHint("Enter keywords to find luxury products")
             .font(.subheadline)
             .foregroundStyle(AppColors.pureWhite)
             .submitLabel(.search)
@@ -47,6 +49,7 @@ struct HomeSearchBar: View {
                         .font(.system(size: 16))
                         .foregroundStyle(AppColors.grayMedium)
                 }
+                .accessibilityLabel("Clear search text")
             }
         }
         .padding(.horizontal, 12)

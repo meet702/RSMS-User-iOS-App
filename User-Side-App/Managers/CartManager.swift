@@ -39,25 +39,25 @@ class CartManager {
     
     // MARK: - Actions
     
-    func addToCart(product: Product, variant: String? = nil, userId: UUID? = nil) {
+    func addToCart(product: Product, variant: String? = nil, quantity: Int = 1, userId: UUID? = nil) {
         if let index = items.firstIndex(where: { $0.product.id == product.id && $0.variant == variant }) {
-            items[index].quantity += 1
+            items[index].quantity += quantity
         } else {
-            items.append(CartItem(product: product, variant: variant))
+            items.append(CartItem(product: product, variant: variant, quantity: quantity))
         }
         
         // Sync to remote if user is logged in
         if let userId = userId {
             Task {
                 do {
-                    let quantity = items.first(where: { $0.product.id == product.id && $0.variant == variant })?.quantity ?? 1
+                    let totalQuantity = items.first(where: { $0.product.id == product.id && $0.variant == variant })?.quantity ?? quantity
                     try await SyncManager.shared.syncAddToCart(
                         userId: userId,
                         productId: product.id,
                         variant: variant,
-                        quantity: quantity
+                        quantity: totalQuantity
                     )
-                    print("✅ Cart Sync: Added/Updated \(product.name) (Qty: \(quantity))")
+                    print("✅ Cart Sync: Added/Updated \(product.name) (Total Qty: \(totalQuantity))")
                 } catch {
                     print("❌ Cart Sync Error: Failed to add \(product.name) - \(error)")
                 }

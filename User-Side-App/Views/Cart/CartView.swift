@@ -110,7 +110,6 @@ struct CartView: View {
     
     private var checkoutFooter: some View {
         VStack(spacing: 20) {
-            // Price breakdown
             VStack(spacing: 12) {
                 HStack {
                     Text("Subtotal")
@@ -151,6 +150,8 @@ struct CartView: View {
                         .foregroundStyle(AppColors.gold)
                 }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Subtotal: \(cartManager.subtotal.formattedPrice). Delivery: Complimentary. Estimated Total: \(cartManager.subtotal.formattedPrice)")
             
             // Checkout button
             Button(action: { showCheckout = true }) {
@@ -241,6 +242,7 @@ struct CartItemRow: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(item.quantity == 1 ? "Remove item" : "Decrease quantity")
                         
                         Text("\(item.quantity)")
                             .font(.subheadline)
@@ -259,6 +261,7 @@ struct CartItemRow: View {
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("Increase quantity")
                     }
                     .padding(4)
                     .background(AppColors.surfaceDark)
@@ -267,6 +270,7 @@ struct CartItemRow: View {
             }
             .padding(.vertical, 4)
         }
+        .accessibilityElement(children: .contain)
         .padding(12)
         .background(AppColors.surfaceDark)
         .clipShape(RoundedRectangle(cornerRadius: 16))
