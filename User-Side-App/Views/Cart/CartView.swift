@@ -122,18 +122,6 @@ struct CartView: View {
                         .foregroundStyle(AppColors.pureWhite)
                 }
                 
-                HStack {
-                    Text("Delivery")
-                        .font(.subheadline)
-                        .foregroundStyle(AppColors.grayLight)
-                    Spacer()
-                    Text("Complimentary")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .tracking(1)
-                        .foregroundStyle(AppColors.gold)
-                }
-                
                 Rectangle()
                     .fill(AppColors.grayDark.opacity(0.3))
                     .frame(height: 0.5)
@@ -151,7 +139,7 @@ struct CartView: View {
                 }
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Subtotal: \(cartManager.subtotal.formattedPrice). Delivery: Complimentary. Estimated Total: \(cartManager.subtotal.formattedPrice)")
+            .accessibilityLabel("Subtotal: \(cartManager.subtotal.formattedPrice). Estimated Total: \(cartManager.subtotal.formattedPrice)")
             
             // Checkout button
             Button(action: { showCheckout = true }) {

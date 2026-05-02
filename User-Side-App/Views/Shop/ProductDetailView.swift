@@ -354,8 +354,6 @@ struct ProductDetailView: View {
     
     private var deliveryInfo: some View {
         VStack(spacing: 12) {
-            deliveryRow(icon: "truck.box", title: "Free Delivery", subtitle: "Estimated 3–5 business days")
-            deliveryRow(icon: "arrow.triangle.2.circlepath", title: "Easy Returns", subtitle: "15-day return policy")
             deliveryRow(icon: "gift", title: "Premium Packaging", subtitle: "Luxury gift-ready packaging included")
         }
         .padding(16)
