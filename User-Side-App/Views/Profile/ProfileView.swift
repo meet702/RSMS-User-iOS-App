@@ -196,7 +196,7 @@ struct ProfileView: View {
         @Bindable var themeManager = themeManager
         
         return menuGroup(title: "APPEARANCE") {
-            HStack {
+            HStack(spacing: 16) {
                 Image(systemName: "paintpalette.fill")
                     .font(.system(size: 18)).foregroundStyle(AppColors.gold.opacity(0.8)).frame(width: 24)
                 Text("Theme").font(.subheadline).foregroundStyle(AppColors.pureWhite)
